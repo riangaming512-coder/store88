@@ -1,0 +1,643 @@
+<meta name='viewport' content='width=device-width, initial-scale=1'/><!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>STORE88 - Smart One-Page System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Inter:wght@400;700&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #030712; color: white; }
+        .font-cyber { font-family: 'Orbitron', sans-serif; }
+        .page { display: none; animation: fadeIn 0.4s ease-out; }
+        .page.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-scroll { animation: scroll 20s linear infinite; }
+        @keyframes scroll { 0% { transform: translateX(100%); } 100% { transform: translateX(-100%); } }
+        .glass { background: rgba(17, 24, 39, 0.7); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.05); }
+        .item-card, .pay-card { border: 1px solid #1f2937; transition: 0.2s; cursor: pointer; }
+        .item-card.active { border-color: #ef4444; background: rgba(239, 68, 68, 0.1); }
+        .pay-card.active { border-color: #3b82f6; background: rgba(59, 130, 246, 0.1); }
+        #custom-modal { display: none; position: fixed; inset: 0; z-index: 100; align-items: center; justify-content: center; padding: 20px; background: rgba(0,0,0,0.8); backdrop-filter: blur(4px); }
+        #custom-modal.show { display: flex; animation: modalIn 0.3s ease-out; }
+        @keyframes modalIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-thumb { background: #374151; border-radius: 10px; }
+    </style>
+</head>
+<body class="select-none">
+
+    <div id="custom-modal">
+        <div class="glass max-w-sm w-full p-8 rounded-[2rem] border border-gray-700 text-center shadow-2xl">
+            <div id="modal-icon" class="text-4xl mb-4">ℹ️</div>
+            <h3 class="text-lg font-black font-cyber uppercase mb-2 text-red-500">Informasi</h3>
+            <div id="modal-message" class="text-sm text-gray-300 leading-relaxed mb-6"></div>
+            <button onclick="closeModal()" class="w-full bg-red-600 hover:bg-red-700 py-3 rounded-xl font-black text-xs uppercase">Saya Mengerti</button>
+        </div>
+    </div>
+
+    <div class="bg-red-700 text-white text-[9px] py-1 overflow-hidden font-bold border-b border-red-800">
+        <div class="animate-scroll whitespace-nowrap uppercase">🚀 INFO: STORE88 Menyediakan layanan top up game termurah & tercepat 24 jam. Gunakan QRIS untuk proses otomatis!</div>
+    </div>
+
+    <nav class="bg-gray-900/80 border-b border-gray-800 p-4 sticky top-0 z-50 backdrop-blur-md">
+        <div class="container mx-auto flex justify-between items-center">
+            <h1 class="text-xl font-black text-red-500 font-cyber tracking-tighter cursor-pointer" onclick="showPage('home')">STORE<span class="text-white">88</span></h1>
+        </div>
+    </nav>
+
+    <div id="home" class="page active container mx-auto p-4 max-w-4xl">
+        <div class="mb-6 rounded-[2rem] overflow-hidden relative h-44 shadow-2xl border border-gray-800">
+            <img src="https://images.unsplash.com/photo-1618336753974-aae8e04506aa?q=80&w=1000&auto=format&fit=crop" class="absolute inset-0 w-full h-full object-cover opacity-60">
+            <div class="absolute inset-0 bg-gradient-to-t from-gray-950 via-transparent p-6 flex flex-col justify-end">
+                <h2 class="text-2xl font-black italic uppercase text-white leading-tight">WARNING<span class="text-red-500">!!!</span></h2>
+                <p class="text-[9px] text-gray-300 mt-1 uppercase font-bold tracking-widest italic"> MASUKAN ID DAN NO WHATSAPP ANDA DENGAN BENAR AGAR BOT MEMPROSES TRANSAKSI ANDA.</p>
+            </div>
+        </div>
+
+        <div class="mb-8">
+            <input type="text" id="search-input" onkeyup="searchGame()" placeholder="Cari Game (MLBB, FF, HOK...)" class="w-full bg-gray-900 border border-gray-800 rounded-2xl py-4 px-6 text-xs focus:ring-1 focus:ring-red-600 outline-none text-white">
+        </div>
+
+        <div id="game-grid" class="grid grid-cols-2 md:grid-cols-4 gap-3"></div>
+    </div>
+
+    <div id="detail" class="page container mx-auto p-4 max-w-xl">
+        <button onclick="showPage('home')" class="mb-6 text-gray-500 text-[10px] font-bold uppercase flex items-center hover:text-white transition">
+            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg> Kembali
+        </button>
+        
+        <div class="glass p-8 rounded-[2.5rem] mb-6 text-center border-t-2 border-red-600">
+            <h2 id="selected-game-name" class="text-2xl font-black font-cyber uppercase text-white"></h2>
+            <p id="selected-game-unit" class="text-red-500 text-[9px] font-bold uppercase mt-2 tracking-widest"></p>
+        </div>
+
+        <div class="space-y-4">
+            <div class="bg-gray-900 p-5 rounded-2xl border border-gray-800">
+                <label id="label-id" class="text-[10px] text-gray-500 font-bold uppercase block mb-2"></label>
+                <div class="flex gap-2">
+                    <input type="text" id="target-id" placeholder="User ID" class="w-full bg-black border border-gray-800 rounded-xl py-4 px-4 text-sm text-white focus:border-red-500 outline-none">
+                    <input type="text" id="zone-id" placeholder="Zone" class="w-24 bg-black border border-gray-800 rounded-xl py-4 px-4 text-sm text-white hidden focus:border-red-500 outline-none">
+                </div>
+            </div>
+
+            <div class="bg-gray-900 p-5 rounded-2xl border border-gray-800">
+                <label class="text-[10px] text-gray-500 font-bold uppercase block mb-2">WhatsApp</label>
+                <input type="tel" id="user-email" placeholder="08xxxxxxxxx" class="w-full bg-black border border-gray-800 rounded-xl py-4 px-4 text-sm text-white focus:border-red-500 outline-none">
+            </div>
+
+            <div class="bg-gray-900 p-5 rounded-2xl border border-gray-800">
+                <label class="text-[10px] text-gray-500 font-bold uppercase block mb-3 italic">Pilih Item:</label>
+                <div id="item-grid" class="grid grid-cols-2 gap-3 max-h-80 overflow-y-auto pr-1"></div>
+            </div>
+
+            <div class="bg-gray-900 p-5 rounded-2xl border border-gray-800">
+                <label class="text-[10px] text-gray-500 font-bold uppercase block mb-3">Metode Pembayaran</label>
+                <div id="payment-grid" class="grid grid-cols-1 gap-3">
+                    <div class="pay-card bg-black p-3 rounded-xl flex items-center gap-3" onclick="selectPayment('QRIS', 'Scan QRIS')">
+                        <div class="w-10 h-10 bg-white rounded-lg flex items-center justify-center p-1"><img src="https://upload.wikimedia.org/wikipedia/commons/a/a2/Logo_QRIS.svg"></div>
+                        <div class="flex-1 text-[10px] font-bold">QRIS (Otomatis)</div>
+                    </div>
+                </div>
+            </div>
+
+            <button onclick="handleOrder()" id="pay-button" class="w-full bg-red-600 py-5 rounded-2xl font-black text-xs uppercase shadow-lg shadow-red-900/40 transition-all active:scale-95">Konfirmasi Pembayaran</button>
+        </div>
+    </div>
+
+    <div id="status" class="page container mx-auto p-4 py-10 text-center">
+        <div class="glass max-w-sm mx-auto p-12 rounded-[3rem] border-t-4 border-red-600 shadow-2xl">
+            <div class="text-5xl mb-6">✅</div>
+            <h2 class="text-xl font-black font-cyber uppercase mb-2">PESANAN MASUK</h2>
+            <p class="text-[10px] text-gray-400 mb-8 uppercase leading-relaxed">Silahkan upload bukti transfer agar pesanan diproses oleh admin.</p>
+            
+            <input type="file" id="proof-of-payment" accept="image/*" class="hidden" onchange="displayFilename()">
+            <label for="proof-of-payment" id="upload-label" class="w-full bg-gray-800 text-gray-300 py-4 rounded-xl text-[10px] font-black uppercase cursor-pointer mb-4 flex items-center justify-center border border-dashed border-gray-600">📁 Klik Untuk Upload Bukti</label>
+            
+            <span id="filename-display" class="text-[8px] block mb-4 text-red-500 uppercase font-bold"></span>
+            
+            <button onclick="uploadProof()" id="upload-button" class="w-full bg-red-600 py-4 rounded-xl text-[10px] font-black uppercase mb-4 opacity-50" disabled>Kirim Bukti Ke Admin</button>
+            <button onclick="showPage('home')" class="w-full bg-white text-black py-4 rounded-xl text-[10px] font-black uppercase">Beranda</button>
+        </div>
+    </div>
+
+    <script>
+        // ================= CONFIGURATION =================
+        const telegramToken = "8232949320:AAHL3SEF27xUMCO1QRtVB3Q19qf3rLsB8Yo"; 
+        const telegramChatId = "6877323140";
+
+        // ================= DATABASE GAME =================
+        const gameDB = [
+            { 
+                name: "Mobile Legends", unit: "Diamonds", label: "User ID", hasZone: true, 
+                items: [
+                    { name: "5 Diamonds", price: "1.500" },
+                    { name: "12 Diamonds", price: "3.500" },
+                    { name: "59 Diamonds", price: "16.000" },
+                    { name: "170 Diamonds", price: "45.000" },
+                    { name: "296 Diamonds", price: "78.000" },
+                    { name: "Weekly Diamond Pass", price: "27.500" },
+                    { name: "Twilight Pass", price: "150.000" },
+                    { name: "5 Diamonds", price: "1.500" },
+                    { name: "12 Diamonds", price: "3.500" },
+                    { name: "59 Diamonds", price: "16.000" },
+                    { name: "170 Diamonds", price: "45.000" },
+                    { name: "296 Diamonds", price: "78.000" },
+                    { name: "Weekly Diamond Pass", price: "27.500" },
+                    { name: "Twilight Pass", price: "150.000" }
+                ]
+            },
+            { 
+                name: "Free Fire", unit: "Diamonds", label: "Player ID", hasZone: false, 
+                items: [
+                    { name: "5 Diamonds", price: "1.000" },
+                    { name: "70 Diamonds", price: "9.500" },
+                    { name: "140 Diamonds", price: "19.000" },
+                    { name: "355 Diamonds", price: "46.500" },
+                    { name: "720 Diamonds", price: "92.000" },
+                    { name: "Membership Mingguan", price: "28.000" },
+                    { name: "5 Diamonds", price: "1.000" },
+                    { name: "70 Diamonds", price: "9.500" },
+                    { name: "140 Diamonds", price: "19.000" },
+                    { name: "355 Diamonds", price: "46.500" },
+                    { name: "720 Diamonds", price: "92.000" },
+                    { name: "Membership Mingguan", price: "28.000" },
+                ]
+            },
+            { 
+                name: "Honor of Kings", unit: "Tokens", label: "User ID", hasZone: false, 
+                items: [
+                    { name: "17 Tokens", price: "3.800" },
+                    { name: "88 Tokens", price: "17.500" },
+                    { name: "257 Tokens", price: "52.000" },
+                    { name: "Weekly Card", price: "32.000" },
+                    { name: "17 Tokens", price: "3.800" },
+                    { name: "88 Tokens", price: "17.500" },
+                    { name: "257 Tokens", price: "52.000" },
+                    { name: "Weekly Card", price: "32.000" },
+                    { name: "17 Tokens", price: "3.800" },
+                    { name: "88 Tokens", price: "17.500" },
+                    { name: "257 Tokens", price: "52.000" },
+                    { name: "Weekly Card", price: "32.000" },
+                    { name: "17 Tokens", price: "3.800" },
+                    { name: "88 Tokens", price: "17.500" },
+                    { name: "257 Tokens", price: "52.000" },
+                    { name: "Weekly Card", price: "32.000" }
+                ]
+            },
+            { 
+                name: "PUBG Mobile", unit: "UC", label: "Character ID", hasZone: false, 
+                items: [
+                    { name: "30 UC", price: "7.000" },
+                    { name: "60 UC", price: "14.000" },
+                    { name: "325 UC", price: "70.000" },
+                    { name: "660 UC", price: "140.000" },
+                    { name: "30 UC", price: "7.000" },
+                    { name: "60 UC", price: "14.000" },
+                    { name: "325 UC", price: "70.000" },
+                    { name: "660 UC", price: "140.000" },
+                    { name: "30 UC", price: "7.000" },
+                    { name: "60 UC", price: "14.000" },
+                    { name: "325 UC", price: "70.000" },
+                    { name: "660 UC", price: "140.000" },
+                    { name: "30 UC", price: "7.000" },
+                    { name: "60 UC", price: "14.000" },
+                    { name: "325 UC", price: "70.000" },
+                    { name: "660 UC", price: "140.000" }
+                ]
+            },
+            { 
+                name: "CALL OF DUTY", unit: "DOLLAR", label: "ID PENGGUNA", hasZone: false, 
+                items: [
+                    { name: "1 DOLLAR", price: "20.500" },
+                    { name: "3 DOLLAR", price: "58.000" },
+                    { name: "5 DOLLAR", price: "100.000" },
+                    { name: "20 DOLLAR", price: "325.000"},
+                    { name: "1 DOLLAR", price: "20.500" },
+                    { name: "3 DOLLAR", price: "58.000" },
+                    { name: "5 DOLLAR", price: "100.000" },
+                    { name: "20 DOLLAR", price: "325.000"}
+                ]
+            },
+           { 
+                name: "arena breakout", unit: "Diamonds", label: "User ID", hasZone: true, 
+                items: [
+                    { name: "5 Diamonds", price: "1.500" },
+                    { name: "12 Diamonds", price: "3.500" },
+                    { name: "59 Diamonds", price: "16.000" },
+                    { name: "170 Diamonds", price: "45.000" },
+                    { name: "296 Diamonds", price: "78.000" },
+                    { name: "Weekly Diamond Pass", price: "27.500" },
+                    { name: "Twilight Pass", price: "150.000" },
+                    { name: "5 Diamonds", price: "1.500" },
+                    { name: "12 Diamonds", price: "3.500" },
+                    { name: "59 Diamonds", price: "16.000" },
+                    { name: "170 Diamonds", price: "45.000" },
+                    { name: "296 Diamonds", price: "78.000" },
+                    { name: "Weekly Diamond Pass", price: "27.500" },
+                    { name: "Twilight Pass", price: "150.000" }
+                ]
+            },
+            { 
+                name: "valorant", unit: "Diamonds", label: "Player ID", hasZone: false, 
+                items: [
+                    { name: "5 Diamonds", price: "1.000" },
+                    { name: "70 Diamonds", price: "9.500" },
+                    { name: "140 Diamonds", price: "19.000" },
+                    { name: "355 Diamonds", price: "46.500" },
+                    { name: "720 Diamonds", price: "92.000" },
+                    { name: "Membership Mingguan", price: "28.000" },
+                    { name: "5 Diamonds", price: "1.000" },
+                    { name: "70 Diamonds", price: "9.500" },
+                    { name: "140 Diamonds", price: "19.000" },
+                    { name: "355 Diamonds", price: "46.500" },
+                    { name: "720 Diamonds", price: "92.000" },
+                    { name: "Membership Mingguan", price: "28.000" },
+                ]
+            },
+            { 
+                name: "genshin", unit: "Tokens", label: "User ID", hasZone: false, 
+                items: [
+                    { name: "17 Tokens", price: "3.800" },
+                    { name: "88 Tokens", price: "17.500" },
+                    { name: "257 Tokens", price: "52.000" },
+                    { name: "Weekly Card", price: "32.000" },
+                    { name: "17 Tokens", price: "3.800" },
+                    { name: "88 Tokens", price: "17.500" },
+                    { name: "257 Tokens", price: "52.000" },
+                    { name: "Weekly Card", price: "32.000" },
+                    { name: "17 Tokens", price: "3.800" },
+                    { name: "88 Tokens", price: "17.500" },
+                    { name: "257 Tokens", price: "52.000" },
+                    { name: "Weekly Card", price: "32.000" },
+                    { name: "17 Tokens", price: "3.800" },
+                    { name: "88 Tokens", price: "17.500" },
+                    { name: "257 Tokens", price: "52.000" },
+                    { name: "Weekly Card", price: "32.000" }
+                ]
+            },
+            { 
+                name: "GARENA UNDAWN", unit: "UC", label: "Character ID", hasZone: false, 
+                items: [
+                    { name: "30 UC", price: "7.000" },
+                    { name: "60 UC", price: "14.000" },
+                    { name: "325 UC", price: "70.000" },
+                    { name: "660 UC", price: "140.000" },
+                    { name: "30 UC", price: "7.000" },
+                    { name: "60 UC", price: "14.000" },
+                    { name: "325 UC", price: "70.000" },
+                    { name: "660 UC", price: "140.000" },
+                    { name: "30 UC", price: "7.000" },
+                    { name: "60 UC", price: "14.000" },
+                    { name: "325 UC", price: "70.000" },
+                    { name: "660 UC", price: "140.000" },
+                    { name: "30 UC", price: "7.000" },
+                    { name: "60 UC", price: "14.000" },
+                    { name: "325 UC", price: "70.000" },
+                    { name: "660 UC", price: "140.000" }
+                ]
+            },
+            { 
+                name: "azur lane", unit: "DOLLAR", label: "ID PENGGUNA", hasZone: false, 
+                items: [
+                    { name: "1 DOLLAR", price: "20.500" },
+                    { name: "3 DOLLAR", price: "58.000" },
+                    { name: "5 DOLLAR", price: "100.000" },
+                    { name: "20 DOLLAR", price: "325.000"},
+                    { name: "1 DOLLAR", price: "20.500" },
+                    { name: "3 DOLLAR", price: "58.000" },
+                    { name: "5 DOLLAR", price: "100.000" },
+                    { name: "20 DOLLAR", price: "325.000"}
+                ]
+            },
+            { 
+                name: "arena of valor", unit: "Diamonds", label: "User ID", hasZone: true, 
+                items: [
+                    { name: "5 Diamonds", price: "1.500" },
+                    { name: "12 Diamonds", price: "3.500" },
+                    { name: "59 Diamonds", price: "16.000" },
+                    { name: "170 Diamonds", price: "45.000" },
+                    { name: "296 Diamonds", price: "78.000" },
+                    { name: "Weekly Diamond Pass", price: "27.500" },
+                    { name: "Twilight Pass", price: "150.000" },
+                    { name: "5 Diamonds", price: "1.500" },
+                    { name: "12 Diamonds", price: "3.500" },
+                    { name: "59 Diamonds", price: "16.000" },
+                    { name: "170 Diamonds", price: "45.000" },
+                    { name: "296 Diamonds", price: "78.000" },
+                    { name: "Weekly Diamond Pass", price: "27.500" },
+                    { name: "Twilight Pass", price: "150.000" }
+                ]
+            },
+            { 
+                name: "ace race", unit: "Diamonds", label: "Player ID", hasZone: false, 
+                items: [
+                    { name: "5 Diamonds", price: "1.000" },
+                    { name: "70 Diamonds", price: "9.500" },
+                    { name: "140 Diamonds", price: "19.000" },
+                    { name: "355 Diamonds", price: "46.500" },
+                    { name: "720 Diamonds", price: "92.000" },
+                    { name: "Membership Mingguan", price: "28.000" },
+                    { name: "5 Diamonds", price: "1.000" },
+                    { name: "70 Diamonds", price: "9.500" },
+                    { name: "140 Diamonds", price: "19.000" },
+                    { name: "355 Diamonds", price: "46.500" },
+                    { name: "720 Diamonds", price: "92.000" },
+                    { name: "Membership Mingguan", price: "28.000" },
+                ]
+            },
+            { 
+                name: "fc mobile", unit: "Tokens", label: "User ID", hasZone: false, 
+                items: [
+                    { name: "17 Tokens", price: "3.800" },
+                    { name: "88 Tokens", price: "17.500" },
+                    { name: "257 Tokens", price: "52.000" },
+                    { name: "Weekly Card", price: "32.000" },
+                    { name: "17 Tokens", price: "3.800" },
+                    { name: "88 Tokens", price: "17.500" },
+                    { name: "257 Tokens", price: "52.000" },
+                    { name: "Weekly Card", price: "32.000" },
+                    { name: "17 Tokens", price: "3.800" },
+                    { name: "88 Tokens", price: "17.500" },
+                    { name: "257 Tokens", price: "52.000" },
+                    { name: "Weekly Card", price: "32.000" },
+                    { name: "17 Tokens", price: "3.800" },
+                    { name: "88 Tokens", price: "17.500" },
+                    { name: "257 Tokens", price: "52.000" },
+                    { name: "Weekly Card", price: "32.000" }
+                ]
+            },
+            { 
+                name: "MAGIC CHESS", unit: "UC", label: "Character ID", hasZone: false, 
+                items: [
+                    { name: "30 UC", price: "7.000" },
+                    { name: "60 UC", price: "14.000" },
+                    { name: "325 UC", price: "70.000" },
+                    { name: "660 UC", price: "140.000" },
+                    { name: "30 UC", price: "7.000" },
+                    { name: "60 UC", price: "14.000" },
+                    { name: "325 UC", price: "70.000" },
+                    { name: "660 UC", price: "140.000" },
+                    { name: "30 UC", price: "7.000" },
+                    { name: "60 UC", price: "14.000" },
+                    { name: "325 UC", price: "70.000" },
+                    { name: "660 UC", price: "140.000" },
+                    { name: "30 UC", price: "7.000" },
+                    { name: "60 UC", price: "14.000" },
+                    { name: "325 UC", price: "70.000" },
+                    { name: "660 UC", price: "140.000" }
+                ]
+            },
+            { 
+                name: "EXNESS DEPOSIT", unit: "DOLLAR", label: "ID PENGGUNA", hasZone: false, 
+                items: [
+                    { name: "1 DOLLAR", price: "20.500" },
+                    { name: "3 DOLLAR", price: "58.000" },
+                    { name: "5 DOLLAR", price: "100.000" },
+                    { name: "20 DOLLAR", price: "325.000"},
+                    { name: "1 DOLLAR", price: "20.500" },
+                    { name: "3 DOLLAR", price: "58.000" },
+                    { name: "5 DOLLAR", price: "100.000" },
+                    { name: "20 DOLLAR", price: "325.000"}
+                ]
+            },
+           { 
+                name: "pulsa lampu", label: "User ID", hasZone: true, 
+                items: [
+                    { name: "5 Diamonds", price: "1.500" },
+                    { name: "12 Diamonds", price: "3.500" },
+                    { name: "59 Diamonds", price: "16.000" },
+                    { name: "170 Diamonds", price: "45.000" },
+                    { name: "296 Diamonds", price: "78.000" },
+                    { name: "Weekly Diamond Pass", price: "27.500" },
+                    { name: "Twilight Pass", price: "150.000" },
+                    { name: "5 Diamonds", price: "1.500" },
+                    { name: "12 Diamonds", price: "3.500" },
+                    { name: "59 Diamonds", price: "16.000" },
+                    { name: "170 Diamonds", price: "45.000" },
+                    { name: "296 Diamonds", price: "78.000" },
+                    { name: "Weekly Diamond Pass", price: "27.500" },
+                    { name: "Twilight Pass", price: "150.000" }
+                ]
+            },
+            { 
+                name: "PULSA TELKOMSEL", unit: "Diamonds", label: "Player ID", hasZone: false, 
+                items: [
+                    { name: "5 Diamonds", price: "1.000" },
+                    { name: "70 Diamonds", price: "9.500" },
+                    { name: "140 Diamonds", price: "19.000" },
+                    { name: "355 Diamonds", price: "46.500" },
+                    { name: "720 Diamonds", price: "92.000" },
+                    { name: "Membership Mingguan", price: "28.000" },
+                    { name: "5 Diamonds", price: "1.000" },
+                    { name: "70 Diamonds", price: "9.500" },
+                    { name: "140 Diamonds", price: "19.000" },
+                    { name: "355 Diamonds", price: "46.500" },
+                    { name: "720 Diamonds", price: "92.000" },
+                    { name: "Membership Mingguan", price: "28.000" },
+                ]
+            },
+            { 
+                name: "PULSA EXSIS", unit: "Tokens", label: "User ID", hasZone: false, 
+                items: [
+                    { name: "17 Tokens", price: "3.800" },
+                    { name: "88 Tokens", price: "17.500" },
+                    { name: "257 Tokens", price: "52.000" },
+                    { name: "Weekly Card", price: "32.000" },
+                    { name: "17 Tokens", price: "3.800" },
+                    { name: "88 Tokens", price: "17.500" },
+                    { name: "257 Tokens", price: "52.000" },
+                    { name: "Weekly Card", price: "32.000" },
+                    { name: "17 Tokens", price: "3.800" },
+                    { name: "88 Tokens", price: "17.500" },
+                    { name: "257 Tokens", price: "52.000" },
+                    { name: "Weekly Card", price: "32.000" },
+                    { name: "17 Tokens", price: "3.800" },
+                    { name: "88 Tokens", price: "17.500" },
+                    { name: "257 Tokens", price: "52.000" },
+                    { name: "Weekly Card", price: "32.000" }
+               
+                ]
+            }
+        ];
+
+        let selectedGame = null, selectedProduct = null, selectedPaymentMethod = null, orderDetails = {};
+
+        // ================= LOGIC FUNCTIONS =================
+
+        function renderHome() {
+            const grid = document.getElementById('game-grid');
+            grid.innerHTML = "";
+            gameDB.forEach((game, index) => {
+                grid.innerHTML += `
+                    <div onclick="selectGame(${index})" class="bg-gray-900 border border-gray-800 p-4 rounded-2xl text-center hover:border-red-600 transition cursor-pointer group">
+                        <div class="h-12 w-12 bg-gray-800 group-hover:bg-red-900/30 rounded-full mx-auto mb-3 flex items-center justify-center font-black text-red-500 transition">${game.name[0]}</div>
+                        <h3 class="text-[10px] font-black uppercase text-white">${game.name}</h3>
+                    </div>`;
+            });
+        }
+
+        function selectGame(index) {
+            selectedGame = gameDB[index];
+            document.getElementById('selected-game-name').innerText = selectedGame.name;
+            document.getElementById('selected-game-unit').innerText = "Top Up " + selectedGame.unit;
+            document.getElementById('label-id').innerText = selectedGame.label;
+            document.getElementById('zone-id').classList.toggle('hidden', !selectedGame.hasZone);
+            
+            const itemGrid = document.getElementById('item-grid');
+            itemGrid.innerHTML = "";
+            
+            selectedGame.items.forEach(product => {
+                let item = document.createElement('div');
+                item.className = "item-card bg-black p-3 rounded-xl text-center";
+                item.innerHTML = `
+                    <div class="text-[9px] font-bold text-white">${product.name}</div>
+                    <div class="text-[8px] text-red-500 font-black">Rp ${product.price}</div>
+                `;
+                item.onclick = () => {
+                    document.querySelectorAll('.item-card').forEach(c => c.classList.remove('active'));
+                    item.classList.add('active');
+                    selectedProduct = { name: product.name, price: product.price };
+                };
+                itemGrid.appendChild(item);
+            });
+            showPage('detail');
+        }
+
+        function selectPayment(name, detail) {
+            selectedPaymentMethod = { name, detail };
+            document.querySelectorAll('.pay-card').forEach(c => c.classList.remove('active'));
+            event.currentTarget.classList.add('active');
+        }
+
+        function handleOrder() {
+            const tid = document.getElementById('target-id').value;
+            const umail = document.getElementById('user-email').value;
+            const zone = document.getElementById('zone-id').value;
+
+            if(!tid || !umail || !selectedProduct || !selectedPaymentMethod) {
+                return openModal("Silahkan lengkapi data dan pilih item!", "⚠️");
+            }
+
+            // Logic Kode Unik
+            const basePrice = parseInt(selectedProduct.price.replace(/\./g, ''));
+            const uniqueCode = Math.floor(Math.random() * 500) + 1;
+            const finalTotal = basePrice + uniqueCode;
+            const formatIDR = (num) => new Intl.NumberFormat('id-ID').format(num);
+
+            orderDetails = { 
+                game: selectedGame.name, 
+                product: selectedProduct.name, 
+                basePrice: selectedProduct.price,
+                uniqueCode: uniqueCode,
+                total: formatIDR(finalTotal), 
+                method: selectedPaymentMethod.name, 
+                target: tid, 
+                zone: zone, 
+                user: umail 
+            };
+            
+            window.nextStep = 'status';
+            
+            openModal(`
+                <div class="text-left bg-gray-900/50 p-4 rounded-2xl mb-4 border border-gray-800">
+                    <p class="text-[10px] text-gray-400 uppercase font-bold">Rincian Pembayaran:</p>
+                    <div class="flex justify-between text-xs mt-2">
+                        <span>Harga Produk</span>
+                        <span>Rp ${orderDetails.basePrice}</span>
+                    </div>
+                    <div class="flex justify-between text-xs text-red-400">
+                        <span>Kode Unik</span>
+                        <span>+ Rp ${orderDetails.uniqueCode}</span>
+                    </div>
+                    <hr class="my-2 border-gray-800">
+                    <div class="flex justify-between text-sm font-black text-white">
+                        <span>TOTAL TRANSFER</span>
+                        <span class="text-red-500 underline">Rp ${orderDetails.total}</span>
+                    </div>
+                </div>
+                <p class="text-[9px] text-yellow-500 mb-4 font-bold uppercase italic">⚠️ TRANSFER HARUS SESUAI NOMINAL TOTAL!</p>
+                <div class="bg-white p-2 rounded-lg inline-block my-2">
+                    <img src="https://i.ibb.co.com/Xr8ps9RX/1766917237971.png" style="width: 180px;">
+                </div>
+            `, "❗");
+        }
+
+        async function uploadProof() {
+            const fileInput = document.getElementById('proof-of-payment'), btn = document.getElementById('upload-button');
+            if(!fileInput.files[0]) return;
+            btn.innerText = "MENGIRIM..."; btn.disabled = true;
+
+            const fd = new FormData();
+            fd.append('chat_id', telegramChatId);
+            fd.append('photo', fileInput.files[0]);
+            
+            const captionText = `🔔 *ORDERAN BARU - STORE88*\n\n` +
+                                `🎮 *Game:* ${orderDetails.game}\n` +
+                                `💎 *Produk:* ${orderDetails.product}\n` +
+                                `🆔 *ID:* ${orderDetails.target} ${orderDetails.zone ? '('+orderDetails.zone+')' : ''}\n` +
+                                `📱 *WA:* ${orderDetails.user}\n` +
+                                `--------------------------\n` +
+                                `💵 Harga: Rp ${orderDetails.basePrice}\n` +
+                                `⚙️ Kode Unik: +${orderDetails.uniqueCode}\n` +
+                                `💰 *TOTAL TF: Rp ${orderDetails.total}*\n` +
+                                `--------------------------\n` +
+                                `📸 *Bukti Telah Terlampir*`;
+
+            fd.append('caption', captionText);
+            fd.append('parse_mode', 'Markdown');
+
+            try {
+                const res = await fetch(`https://api.telegram.org/bot${telegramToken}/sendPhoto`, { method: 'POST', body: fd });
+                if(res.ok) { 
+                    openModal("Bukti Berhasil Dikirim! Admin akan segera memproses.", "✅"); 
+                    setTimeout(() => location.reload(), 4000); 
+                }
+            } catch (e) { 
+                openModal("Gagal Mengirim! Cek koneksi Anda."); 
+                btn.disabled = false; 
+                btn.innerText = "Kirim Bukti"; 
+            }
+        }
+
+        // ================= UTILS =================
+
+        function displayFilename() { 
+            const f = document.getElementById('proof-of-payment').files[0];
+            document.getElementById('filename-display').innerText = f ? f.name : "";
+            const btn = document.getElementById('upload-button');
+            btn.disabled = !f;
+            btn.classList.toggle('opacity-50', !f);
+        }
+
+        function showPage(p) { 
+            document.querySelectorAll('.page').forEach(page => page.classList.remove('active')); 
+            document.getElementById(p).classList.add('active'); 
+            window.scrollTo(0,0); 
+        }
+
+        function openModal(m, i) { 
+            document.getElementById('modal-message').innerHTML = m; 
+            document.getElementById('modal-icon').innerText = i; 
+            document.getElementById('custom-modal').classList.add('show'); 
+        }
+
+        function closeModal() { 
+            document.getElementById('custom-modal').classList.remove('show'); 
+            if(window.nextStep) showPage(window.nextStep); 
+            window.nextStep = null; 
+        }
+
+        function searchGame() { 
+            const v = document.getElementById('search-input').value.toLowerCase(); 
+            const cards = document.querySelectorAll('#game-grid > div');
+            gameDB.forEach((game, i) => {
+                cards[i].style.display = game.name.toLowerCase().includes(v) ? 'block' : 'none';
+            });
+        }
+
+        // Initialize
+        renderHome();
+    </script>
+</body>
+</html>
