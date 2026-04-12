@@ -3,323 +3,237 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>TokoKu Super App</title>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <title>Store88 Pro Commerce</title>
   <style>
-    :root{--bg:#fff;--blue:#3B82F6;--text:#0f172a;--muted:#64748b;--line:#e2e8f0;--danger:#ef4444;}
-    *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--text);padding-bottom:78px}
-    .app{max-width:900px;margin:0 auto}
-    .sticky{position:sticky;top:0;z-index:20;background:#fff;border-bottom:1px solid var(--line)}
-    .header{display:flex;align-items:center;justify-content:space-between;padding:10px 12px}
-    .title{font-size:18px;font-weight:800;color:var(--blue)}
-    .badge{background:var(--danger);color:#fff;border-radius:10px;padding:0 6px;font-size:11px;margin-left:4px}
-    .pill{border:1px solid var(--line);border-radius:12px;padding:7px 10px;font-size:12px;background:#fff}
-    .banner{margin:10px 12px;height:120px;border-radius:14px;overflow:hidden;position:relative}
-    .banner img{width:100%;height:100%;object-fit:cover}
-    .banner a{display:block;width:100%;height:100%}
-    .dots{position:absolute;right:8px;bottom:8px;display:flex;gap:6px}.dot{width:8px;height:8px;border-radius:50%;background:#ffffff8d}.dot.active{background:#fff}
-    .toolbar{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:0 12px 10px}
-    input,select,button,textarea{font:inherit}
-    input,select,textarea{width:100%;padding:10px;border:1px solid var(--line);border-radius:10px;background:#fff}
-    button{border:none;background:var(--blue);color:#fff;padding:10px;border-radius:10px;font-weight:600;transition:.2s;cursor:pointer}
-    button:active{transform:scale(.95)}
-    .outline{background:#fff;color:var(--blue);border:1px solid var(--blue)}
-    .danger{background:var(--danger)}
-    .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:0 12px}
-    .card{border:1px solid var(--line);border-radius:12px;padding:8px;transition:.2s;background:#fff}
-    .card:hover{transform:translateY(-3px);box-shadow:0 8px 20px rgba(59,130,246,.15)}
-    .card img{width:100%;height:110px;object-fit:cover;border-radius:8px}
-    .meta{font-size:12px;color:var(--muted)}
-    .price{font-weight:800;color:var(--blue)}
-    .sec{padding:10px 12px}
-    .panel{border:1px solid var(--line);border-radius:12px;padding:10px;margin-bottom:10px}
-    .row{display:flex;gap:8px;align-items:center}.row>*{flex:1}
-    .small{font-size:12px}
-    .hidden{display:none!important}
-    .bottom{position:fixed;left:0;right:0;bottom:0;background:#fff;border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(4,1fr);max-width:900px;margin:0 auto;z-index:30}
-    .navbtn{padding:8px 4px;text-align:center;font-size:12px;color:#334155;position:relative}
-    .navbtn.active{color:var(--blue);font-weight:800}
-    .count{position:absolute;right:22%;top:6px;background:var(--danger);color:#fff;border-radius:999px;font-size:10px;padding:1px 5px}
-    .view{display:none}.view.active{display:block}
+    :root{--bg:#f8fafc;--card:#fff;--line:#e2e8f0;--text:#0f172a;--muted:#64748b;--brand:#2563eb;--ok:#16a34a;--warn:#f59e0b;--danger:#dc2626}
+    *{box-sizing:border-box} body{margin:0;font-family:Inter,system-ui,sans-serif;background:var(--bg);color:var(--text);padding-bottom:76px}
+    .app{max-width:980px;margin:0 auto}.top{position:sticky;top:0;background:#fff;border-bottom:1px solid var(--line);z-index:20}
+    .row{display:flex;gap:10px;align-items:center}.row>*{flex:1}.sec{padding:12px}.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px}
+    .card,.panel{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:10px}.card img,.media{width:100%;height:140px;object-fit:cover;border-radius:10px;background:#e5e7eb}
+    input,select,textarea,button{font:inherit} input,select,textarea{width:100%;padding:10px;border:1px solid var(--line);border-radius:10px;background:#fff}
+    button{border:none;background:var(--brand);color:#fff;border-radius:10px;padding:10px 12px;font-weight:700;cursor:pointer}.outline{background:#fff;color:var(--brand);border:1px solid var(--brand)}
+    .danger{background:var(--danger)} .muted{color:var(--muted)} .small{font-size:12px} .price{font-weight:800;color:var(--brand)} .hidden{display:none!important}
+    .nav{position:fixed;left:0;right:0;bottom:0;max-width:980px;margin:0 auto;background:#fff;border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(5,1fr)}
+    .nb{padding:8px 4px;text-align:center;font-size:12px;color:#334155}.nb.active{color:var(--brand);font-weight:800}.view{display:none}.view.active{display:block}
+    .chip{padding:4px 8px;border-radius:999px;font-size:11px;font-weight:700}.s1{background:#dbeafe;color:#1d4ed8}.s2{background:#fef3c7;color:#92400e}.s3{background:#dcfce7;color:#166534}.s4{background:#fee2e2;color:#991b1b}
+    .toast{position:fixed;top:14px;left:50%;transform:translateX(-50%);background:#0f172a;color:#fff;padding:10px 14px;border-radius:999px;z-index:60;display:none}
     .list{display:flex;flex-direction:column;gap:8px}
-    .modal{position:fixed;inset:0;background:#0008;display:none;align-items:flex-end;z-index:40}
-    .modal.show{display:flex}
-    .sheet{background:#fff;width:100%;max-width:900px;margin:0 auto;border-radius:16px 16px 0 0;padding:12px;max-height:88vh;overflow:auto;animation:up .2s}
-    @keyframes up{from{transform:translateY(40px);opacity:.2}to{transform:translateY(0);opacity:1}}
-    .chatbox{height:220px;overflow:auto;border:1px solid var(--line);padding:8px;border-radius:10px}
-    .msg{font-size:12px;padding:6px 8px;border-radius:8px;margin:4px 0;max-width:85%}
-    .me{margin-left:auto;background:#dbeafe}.other{background:#f1f5f9}
-    .tabs{display:flex;gap:6px;overflow:auto}.tabs button{white-space:nowrap;padding:8px 10px;font-size:12px}
-    .muted{color:var(--muted)}
   </style>
 </head>
 <body>
+<div id="toast" class="toast"></div>
 <div class="app">
-  <div class="sticky">
-    <div class="header">
-      <div class="title">TokoKu Super App</div>
-      <div>
-        <button class="outline small" id="btnNotif">🔔 <span id="notifBadge" class="badge hidden">0</span></button>
-        <button class="outline small" id="btnCart">🛒 <span id="cartBadge" class="badge hidden">0</span></button>
-      </div>
+  <header class="top sec row" style="justify-content:space-between">
+    <div style="font-size:20px;font-weight:900;color:var(--brand)">Store88 Pro</div>
+    <div class="row" style="max-width:330px">
+      <input id="search" placeholder="Cari produk / toko..." />
+      <button class="outline" id="btnLoginHint">Login</button>
     </div>
-  </div>
+  </header>
 
-  <section id="v-home" class="view active">
-    <div class="banner" id="bannerWrap"></div>
-    <div class="toolbar">
-      <input id="search" placeholder="Cari produk..." />
-      <select id="catFilter"><option value="">Semua Kategori</option></select>
-      <div class="row"><input id="minP" type="number" placeholder="Harga min"/><input id="maxP" type="number" placeholder="Harga max"/></div>
-      <div class="row"><select id="ratingFilter"><option value="0">Rating Min</option><option>3</option><option>4</option><option>4.5</option></select><select id="sortBy"><option value="cheap">Termurah</option><option value="exp">Termahal</option><option value="sold">Terlaris</option></select></div>
-    </div>
-    <div id="products" class="grid"></div>
-    <div class="sec row"><button class="outline" id="prevPage">Prev</button><div class="small muted" id="pageInfo"></div><button class="outline" id="nextPage">Next</button></div>
+  <section id="v-home" class="view active sec">
+    <div class="panel small muted">Tidak ada item demo. Produk hanya bisa dibuat oleh Admin atau Seller terverifikasi.</div>
+    <div id="homeGrid" class="grid" style="margin-top:10px"></div>
   </section>
 
-  <section id="v-cart" class="view"><div class="sec">
-    <h3>Keranjang</h3><div id="cartList" class="list"></div>
-    <div class="panel small" id="cartSummary"></div>
-    <button id="goCheckout">Checkout</button>
-  </div></section>
+  <section id="v-topup" class="view sec">
+    <div class="panel small">Halaman voucher topup game (khusus produk admin). Pembeli bisa checkout normal, status pesanan diproses otomatis bertahap.</div>
+    <div id="topupGrid" class="grid" style="margin-top:10px"></div>
+  </section>
 
-  <section id="v-chat" class="view"><div class="sec">
-    <h3>Chat</h3><div class="panel">
-      <select id="chatProduct"></select>
-      <div class="chatbox" id="chatBox"></div>
-      <div class="row"><input id="chatText" placeholder="Tulis pesan..."/><button id="sendChat">Kirim</button></div>
-    </div>
-  </div></section>
+  <section id="v-feed" class="view sec">
+    <div id="feedComposer" class="panel hidden"></div>
+    <div id="feedList" class="list" style="margin-top:10px"></div>
+  </section>
 
-  <section id="v-account" class="view"><div class="sec">
-    <h3>Akun</h3>
-    <div id="authBox" class="panel"></div>
-    <div id="userBox" class="hidden">
-      <div class="panel" id="walletBox"></div>
-      <div class="tabs">
-        <button class="outline" data-tab="orders">Riwayat Pesanan</button>
-        <button class="outline" data-tab="seller">Seller Center</button>
-        <button class="outline" data-tab="settings">Pengaturan</button>
-        <button class="outline" data-tab="admin">Admin</button>
-      </div>
-      <div id="tab-orders" class="panel"></div>
-      <div id="tab-seller" class="panel hidden"></div>
-      <div id="tab-settings" class="panel hidden"></div>
-      <div id="tab-admin" class="panel hidden"></div>
-      <button class="danger" id="logoutBtn">Logout</button>
+  <section id="v-cart" class="view sec">
+    <h3>Keranjang & Checkout Pro</h3>
+    <div id="cartList" class="list"></div>
+    <div id="checkoutBox" class="panel" style="margin-top:10px"></div>
+  </section>
+
+  <section id="v-account" class="view sec">
+    <div id="auth" class="panel"></div>
+    <div id="accountArea" class="hidden">
+      <div id="profile" class="panel"></div>
+      <div id="sellerBox" class="panel" style="margin-top:10px"></div>
+      <div id="adminBox" class="panel" style="margin-top:10px"></div>
+      <div id="orderBox" class="panel" style="margin-top:10px"></div>
+      <button id="logout" class="danger" style="margin-top:8px">Logout</button>
     </div>
-  </div></section>
+  </section>
 </div>
 
-<div class="bottom">
-  <div class="navbtn active" data-view="home">🏠<br>Home</div>
-  <div class="navbtn" data-view="cart">🛒<br>Keranjang <span id="cartNavBadge" class="count hidden">0</span></div>
-  <div class="navbtn" data-view="chat">💬<br>Chat</div>
-  <div class="navbtn" data-view="account">👤<br>Akun</div>
-</div>
-
-<div class="modal" id="modal"><div class="sheet" id="modalBody"></div></div>
+<nav class="nav">
+  <div class="nb active" data-v="home">🏠<br>Home</div>
+  <div class="nb" data-v="topup">🎮<br>Topup</div>
+  <div class="nb" data-v="feed">📸<br>Post</div>
+  <div class="nb" data-v="cart">🛒<br>Checkout</div>
+  <div class="nb" data-v="account">👤<br>Akun</div>
+</nav>
 
 <script>
-// === FITUR === Utilitas & Penyimpanan
-const KEY='TokoKu_';
-const $=s=>document.querySelector(s);
-const $$=s=>Array.from(document.querySelectorAll(s));
-const uid=()=>Math.random().toString(36).slice(2,9);
-const now=()=>new Date().toISOString();
+const KEY='STORE88_PRO_';
+const $=s=>document.querySelector(s); const $$=s=>Array.from(document.querySelectorAll(s));
 const read=(k,d)=>JSON.parse(localStorage.getItem(KEY+k)||JSON.stringify(d));
 const write=(k,v)=>localStorage.setItem(KEY+k,JSON.stringify(v));
+const now=()=>new Date().toISOString();
+const money=n=>'Rp '+Math.round(n||0).toLocaleString('id-ID');
+const uid=()=>Math.random().toString(36).slice(2,10);
 
-// === FITUR === i18n + Currency
-const T={id:{checkout:'Checkout',saldo:'Saldo',deposit:'Deposit',wallet:'Dompet',contact:'Kontak Admin'},en:{checkout:'Checkout',saldo:'Balance',deposit:'Deposit',wallet:'Wallet',contact:'Contact Admin'}};
-let app=read('app', {lang:'id',currency:'IDR',usdRate:16000,admin:{wa:'628123456789',rekening:'BCA 1234567',komisi:5,banners:[{img:'https://picsum.photos/seed/a/800/240',link:'#'},{img:'https://picsum.photos/seed/b/800/240',link:'#'},{img:'https://picsum.photos/seed/c/800/240',link:'#'}]},notifs:[]});
-const tr=k=>T[app.lang][k]||k;
-const money=n=>app.currency==='IDR'?`Rp ${Math.round(n).toLocaleString('id-ID')}`:`$ ${(n/app.usdRate).toFixed(2)}`;
+let users=read('users',[{username:'admin',password:'admin',isAdmin:true,seller:false,createdAt:now()}]);
+let session=read('session',{username:null});
+let products=read('products',[]); // no demo items
+let carts=read('carts',{});
+let orders=read('orders',[]);
+let topupProducts=read('topupProducts',[]); // only admin can create
+let feed=read('feed',[]);
 
-// === FITUR === Data Demo 100+ produk
-function seedProducts(){
-  if(read('products',[]).length) return;
-  const cats=['Elektronik','Fashion','Rumah','Makanan','Olahraga'];
-  const colors=['Hitam','Putih','Biru','Merah'];
-  const sizes=['S','M','L','XL'];
-  const p=[];
-  for(let i=1;i<=120;i++){
-    const cat=cats[i%cats.length],price=15000+(i*2300),rating=+(3+Math.random()*2).toFixed(1);
-    p.push({id:'P'+i,name:`Produk ${i}`,price,stock:10+(i%20),rating,sold:Math.floor(Math.random()*900),category:cat,store:`Toko ${1+i%9}`,image:`https://picsum.photos/seed/prod${i}/300/300`,wish:false,variants:{size:sizes,color:colors,varStock:{}}});
+const me=()=>users.find(u=>u.username===session.username);
+function toast(t){const el=$('#toast');el.textContent=t;el.style.display='block';setTimeout(()=>el.style.display='none',2200)}
+function loginGuard(msg='Harap login dulu untuk lanjut.'){ if(!me()){toast(msg);return false;} return true; }
+
+function renderHome(){
+  const q=$('#search').value.toLowerCase();
+  const list=products.filter(p=>`${p.name} ${p.store}`.toLowerCase().includes(q));
+  $('#homeGrid').innerHTML=list.map(p=>`<div class='card'><img src='${p.image||''}' alt='${p.name}'><b>${p.name}</b><div class='small muted'>${p.store}</div><div class='small'>Stok: ${p.stock}</div><div class='price'>${money(p.price)}</div><button onclick="addCart('${p.id}','produk')">+ Keranjang</button></div>`).join('') || "<div class='panel small muted'>Belum ada produk. Admin/Seller bisa menambah dari Akun.</div>";
+}
+
+function renderTopup(){
+  $('#topupGrid').innerHTML=topupProducts.map(p=>`<div class='card'><img src='${p.image||''}' alt='${p.name}'><b>${p.name}</b><div class='small muted'>Voucher • Admin Store</div><div class='small'>Stok: ${p.stock}</div><div class='price'>${money(p.price)}</div><button onclick="addCart('${p.id}','topup')">Beli Voucher</button></div>`).join('') || "<div class='panel small muted'>Belum ada voucher topup tersedia.</div>";
+}
+
+function addCart(id,type){
+  if(!loginGuard()) return;
+  const u=me().username; carts[u]=carts[u]||[];
+  const src=(type==='topup'?topupProducts:products).find(x=>x.id===id); if(!src) return;
+  const found=carts[u].find(i=>i.id===id && i.type===type);
+  if(found){ if(found.qty>=src.stock) return toast('Stok tidak cukup.'); found.qty++; }
+  else carts[u].push({id,type,name:src.name,price:src.price,qty:1,store:src.store||'Admin Store'});
+  write('carts',carts); renderCart(); toast('Item masuk keranjang.');
+}
+
+function renderCart(){
+  const u=me()?.username||'_'; const list=carts[u]||[];
+  $('#cartList').innerHTML=list.map((i,idx)=>`<div class='panel small'><b>${i.name}</b> • ${i.type}<br>${money(i.price)} x ${i.qty}<div class='row'><button class='outline' onclick='qty(${idx},-1)'>-</button><button class='outline' onclick='qty(${idx},1)'>+</button><button class='danger' onclick='delItem(${idx})'>Hapus</button></div></div>`).join('') || "<div class='panel small muted'>Keranjang kosong.</div>";
+  const sub=list.reduce((a,b)=>a+b.price*b.qty,0), fee=Math.round(sub*0.01), total=sub+fee;
+  $('#checkoutBox').innerHTML=`
+    <h4>Checkout</h4>
+    <div class='small muted'>Biaya layanan 1% untuk proteksi transaksi.</div>
+    <div class='row'><input id='addr' placeholder='Alamat / ID tujuan topup'><select id='pay'><option>Transfer Bank</option><option>QRIS</option><option>E-Wallet</option></select></div>
+    <div class='small'>Subtotal: <b>${money(sub)}</b><br>Biaya layanan: <b>${money(fee)}</b><br>Total: <b>${money(total)}</b></div>
+    <button id='doCheckout'>Bayar & Buat Pesanan</button>
+    <div class='small muted'>Setelah checkout: menunggu pembayaran → verifikasi admin → diproses → dikirim/selesai.</div>`;
+  $('#doCheckout').onclick=()=>checkout(list,sub,fee,total);
+}
+function qty(i,d){const u=me()?.username;if(!u)return;const arr=carts[u];if(!arr||!arr[i])return;arr[i].qty+=d;if(arr[i].qty<=0)arr.splice(i,1);write('carts',carts);renderCart();}
+function delItem(i){const u=me()?.username;if(!u)return;carts[u].splice(i,1);write('carts',carts);renderCart();}
+
+function checkout(items,sub,fee,total){
+  if(!loginGuard()) return;
+  if(!items.length) return toast('Keranjang masih kosong.');
+  if(!$('#addr').value.trim()) return toast('Isi alamat / ID tujuan terlebih dahulu.');
+  const o={id:'ORD-'+Date.now(),user:me().username,items:JSON.parse(JSON.stringify(items)),sub,fee,total,payment:$('#pay').value,address:$('#addr').value,status:'Menunggu Pembayaran',createdAt:Date.now(),updatedAt:Date.now(),timeline:[{status:'Menunggu Pembayaran',time:now(),note:'Harap selesaikan pembayaran dulu.'}]};
+  orders.unshift(o); write('orders',orders); carts[me().username]=[]; write('carts',carts); consumeStock(o.items);
+  toast('Checkout berhasil. Harap tunggu konfirmasi pembayaran.');
+  scheduleOrderFlow(o.id);
+  renderAll();
+}
+
+function consumeStock(items){
+  items.forEach(it=>{
+    const list=it.type==='topup'?topupProducts:products; const p=list.find(x=>x.id===it.id);
+    if(p) p.stock=Math.max(0,p.stock-it.qty);
+  });
+  write('products',products); write('topupProducts',topupProducts);
+}
+
+function scheduleOrderFlow(orderId){
+  setTimeout(()=>updateOrder(orderId,'Menunggu Verifikasi Admin','Pembayaran terdeteksi, admin sedang memverifikasi.'),4000);
+  setTimeout(()=>updateOrder(orderId,'Diproses Penjual','Pesanan sedang diproses. Mohon tunggu sebentar.'),9000);
+  setTimeout(()=>updateOrder(orderId,'Dikirim / Topup Berhasil','Pesanan telah dikirim atau topup sukses.'),15000);
+  setTimeout(()=>updateOrder(orderId,'Selesai','Transaksi selesai. Terima kasih sudah berbelanja.'),21000);
+}
+
+function updateOrder(id,status,note){
+  const o=orders.find(x=>x.id===id); if(!o) return;
+  o.status=status; o.updatedAt=Date.now(); o.timeline.push({status,time:now(),note});
+  write('orders',orders); if($('#v-account').classList.contains('active')) renderOrders();
+}
+function statusChip(s){
+  if(s==='Selesai')return `<span class='chip s3'>${s}</span>`;
+  if(s.includes('Menunggu'))return `<span class='chip s2'>${s}</span>`;
+  if(s.includes('Diproses')||s.includes('Dikirim'))return `<span class='chip s1'>${s}</span>`;
+  return `<span class='chip s4'>${s}</span>`;
+}
+
+function renderAuth(){
+  const u=me();
+  if(!u){
+    $('#auth').innerHTML=`<h3>Login / Register</h3><div class='row'><input id='u' placeholder='Username'><input id='p' type='password' placeholder='Password'></div><div class='row'><button id='lg'>Login</button><button class='outline' id='rg'>Register</button></div><div class='small muted'>Pesan sistem profesional: Harap login dulu untuk melakukan pembelian, chat, posting, dan checkout.</div>`;
+    $('#accountArea').classList.add('hidden');
+    $('#lg').onclick=()=>{const user=users.find(x=>x.username===$('#u').value&&x.password===$('#p').value);if(!user)return toast('Login gagal. Cek username/password.');session.username=user.username;write('session',session);renderAll();};
+    $('#rg').onclick=()=>{if(!$('#u').value||!$('#p').value)return toast('Username dan password wajib diisi.');if(users.some(x=>x.username===$('#u').value))return toast('Username sudah dipakai.');users.push({username:$('#u').value,password:$('#p').value,isAdmin:false,seller:false,createdAt:now()});write('users',users);toast('Register berhasil. Silakan login.');};
+    return;
   }
-  write('products',p);
-}
-seedProducts();
-
-// === FITUR === Auth/Register + data buyer/seller
-let users=read('users',[{username:'admin',password:'admin',createdAt:now(),isAdmin:true,saldo:0,mutasi:[],profile:{photo:'',phone:'',address:'',addressHistory:[]},orders:[],wishlist:[],seller:null,totalBelanja:0,level:'Bronze'}]);
-let sessions=read('session',{username:null});
-let carts=read('carts',{}),topups=read('topups',[]),orders=read('orders',[]),chats=read('chats',{}),storeVouchers=read('storeVouchers',[]),marketVouchers=read('marketVouchers',[{code:'HEMAT10',nominal:10000,min:50000}]);
-const me=()=>users.find(u=>u.username===sessions.username);
-
-// === FITUR === Suara Web Audio API
-function beep(type='ting'){const ctx=new (window.AudioContext||window.webkitAudioContext)();const o=ctx.createOscillator(),g=ctx.createGain();o.connect(g);g.connect(ctx.destination);o.frequency.value=type==='cash'?220:880;g.gain.value=.06;o.start();o.stop(ctx.currentTime+(type==='cash'?.28:.12));}
-
-// === FITUR === Notifikasi & badge
-function pushNotif(text,to='all'){app.notifs.unshift({id:uid(),text,time:now(),read:false,to});write('app',app);renderBadges();}
-function renderBadges(){const u=sessions.username;const n=app.notifs.filter(n=>(n.to==='all'||n.to===u)&&!n.read).length;['#notifBadge'].forEach(id=>{const el=$(id);el.textContent=n;el.classList.toggle('hidden',!n)});const c=(carts[u]||[]).reduce((a,b)=>a+b.qty,0);['#cartBadge','#cartNavBadge'].forEach(id=>{const el=$(id);el.textContent=c;el.classList.toggle('hidden',!c)});}
-
-// === FITUR === Banner carousel + info iklan
-let bIdx=0;function renderBanner(){const b=app.admin.banners;$('#bannerWrap').innerHTML=`<a href="${b[bIdx].link}" target="_blank"><img loading="lazy" src="${b[bIdx].img}"></a><div class='dots'>${b.map((_,i)=>`<div class='dot ${i===bIdx?'active':''}'></div>`).join('')}</div>`;}
-setInterval(()=>{bIdx=(bIdx+1)%app.admin.banners.length;renderBanner()},3000);
-
-// === FITUR === Marketplace, search/filter/sort, pagination 10
-let page=1;const perPage=10;
-function filteredProducts(){
-  const s=$('#search').value.toLowerCase(),cat=$('#catFilter').value,min=+$('#minP').value||0,max=+$('#maxP').value||1e12,rt=+$('#ratingFilter').value||0,sort=$('#sortBy').value;
-  let ps=read('products',[]).filter(p=>p.name.toLowerCase().includes(s)&&(!cat||p.category===cat)&&p.price>=min&&p.price<=max&&p.rating>=rt);
-  ps.sort((a,b)=>sort==='cheap'?a.price-b.price:sort==='exp'?b.price-a.price:b.sold-a.sold);return ps;
-}
-function renderProducts(){
-  const ps=filteredProducts(); const maxPage=Math.max(1,Math.ceil(ps.length/perPage)); page=Math.min(page,maxPage);
-  const start=(page-1)*perPage;const show=ps.slice(start,start+perPage);const u=me();
-  $('#products').innerHTML=show.map(p=>`<div class='card'>
-    <img loading='lazy' src='${p.image}' alt='${p.name}'>
-    <div><b>${p.name}</b> <span data-id='${p.id}' class='wish' style='float:right;cursor:pointer'>${u?.wishlist?.includes(p.id)?'❤️':'🤍'}</span></div>
-    <div class='meta'>${p.store} • ⭐${p.rating} • Terjual ${p.sold}</div><div class='meta'>Stok ${p.stock} • ${p.category}</div>
-    <div class='price'>${money(p.price)}</div>
-    <div class='row'><select id='sz_${p.id}'>${p.variants.size.map(v=>`<option>${v}</option>`).join('')}</select><select id='cl_${p.id}'>${p.variants.color.map(v=>`<option>${v}</option>`).join('')}</select></div>
-    <button onclick="addCart('${p.id}')">+ Keranjang</button>
-  </div>`).join('');
-  $('#pageInfo').textContent=`Halaman ${page}/${maxPage} (${ps.length} produk)`;
-  $$('.wish').forEach(w=>w.onclick=()=>toggleWish(w.dataset.id));
-}
-function toggleWish(pid){
-  const u=me(); if(!u) return alert('Login dulu');
-  u.wishlist=u.wishlist||[];
-  if(u.wishlist.includes(pid)) u.wishlist=u.wishlist.filter(x=>x!==pid);
-  else u.wishlist.push(pid);
-  write('users',users); renderProducts();
+  $('#auth').innerHTML='<h3>Anda sudah login.</h3>';
+  $('#accountArea').classList.remove('hidden');
+  $('#profile').innerHTML=`<h4>Profil</h4><div class='small'>User: <b>${u.username}</b> • Role: ${u.isAdmin?'Admin':(u.seller?'Seller':'Pembeli')}</div>`;
+  renderSellerBox(u); renderAdminBox(u); renderOrders();
 }
 
-// === FITUR === Cart varian qty hapus
-function addCart(pid){if(!sessions.username) return alert('Login dulu'); const p=read('products',[]).find(x=>x.id===pid),u=sessions.username; carts[u]=carts[u]||[];
-  const size=$(`#sz_${pid}`).value,color=$(`#cl_${pid}`).value,key=pid+size+color;let it=carts[u].find(i=>i.key===key);
-  if(it) it.qty++; else carts[u].push({key,pid,size,color,qty:1,price:p.price,name:p.name,store:p.store}); write('carts',carts); beep('ting'); renderBadges(); renderCart();}
-function renderCart(){const u=sessions.username||'_';const list=carts[u]||[];$('#cartList').innerHTML=list.map((i,idx)=>`<div class='panel small'><b>${i.name}</b> (${i.size}/${i.color})<br>${money(i.price)} x ${i.qty}
-  <div class='row'><button class='outline' onclick='qCart(${idx},-1)'>-</button><button class='outline' onclick='qCart(${idx},1)'>+</button><button class='danger' onclick='delCart(${idx})'>Hapus</button></div></div>`).join('')||'Keranjang kosong';
-  const sub=list.reduce((a,b)=>a+b.price*b.qty,0);$('#cartSummary').innerHTML=`Subtotal: <b>${money(sub)}</b>`;renderBadges();}
-function qCart(i,d){const u=sessions.username; if(!carts[u])return; carts[u][i].qty+=d; if(carts[u][i].qty<=0)carts[u].splice(i,1); write('carts',carts); renderCart();}
-function delCart(i){const u=sessions.username; carts[u].splice(i,1);write('carts',carts);renderCart();}
-
-// === FITUR === Checkout + ongkir + voucher + saldo/transfer/COD + countdown 1x24 jam
-$('#goCheckout').onclick=()=>{if(!(carts[sessions.username]||[]).length)return alert('Keranjang kosong');openCheckout();}
-function openCheckout(){
-  const items=carts[sessions.username],sub=items.reduce((a,b)=>a+b.price*b.qty,0);
-  $('#modalBody').innerHTML=`<h3>${tr('checkout')}</h3><div class='panel'>
-  <input id='addr' placeholder='Alamat lengkap'>
-  <div class='row'><select id='ship'><option value='reg'>Reguler</option><option value='exp'>Express</option></select><input id='voucher' placeholder='Voucher'></div>
-  <div class='row'><select id='pay'><option>Saldo</option><option>Transfer</option><option>COD</option></select><input id='phone' placeholder='No HP'></div>
-  <small>Ongkir otomatis: Reg 12000 / Exp 25000</small><div id='sum'></div><button id='payNow'>Bayar</button>
-  </div>`;
-  const recalc=()=>{const ship=$('#ship').value==='exp'?25000:12000;let disc=0;const v=$('#voucher').value.trim();const all=[...marketVouchers,...storeVouchers];const f=all.find(x=>x.code===v&&sub>=x.min);if(f)disc=f.nominal;$('#sum').innerHTML=`Total: <b>${money(sub+ship-disc)}</b> (diskon ${money(disc)})`; return {ship,disc,total:sub+ship-disc};};
-  $('#ship').onchange=$('#voucher').oninput=recalc;recalc();
-  $('#payNow').onclick=()=>{const u=me();const {ship,disc,total}=recalc();const method=$('#pay').value; if(method==='Saldo'&&u.saldo<total)return alert('Saldo kurang');
-    const od={id:'O'+Date.now(),user:u.username,items,address:$('#addr').value,phone:$('#phone').value,ship:$('#ship').value,shipCost:ship,discount:disc,total,method,status:method==='COD'?'Menunggu ACC COD':'Menunggu Bayar',resi:'',createdAt:now(),deadline:Date.now()+86400000};
-    orders.unshift(od);write('orders',orders); carts[u.username]=[];write('carts',carts); if(method==='Saldo'){u.saldo-=total;u.mutasi.unshift({time:now(),type:'keluar',amount:total,note:'Checkout '+od.id});}
-    if(method!=='COD')u.mutasi.unshift({time:now(),type:'keluar',amount:0,note:'Batas bayar 24 jam '+od.id});
-    if(method==='Transfer')pushNotif('Pesanan '+od.id+' menunggu transfer',u.username); if(method==='COD')pushNotif('Order COD butuh ACC admin', 'admin');
-    if(u.seller) pushNotif('Order baru masuk ke seller',u.username); write('users',users); beep('cash'); closeModal(); renderAll();
-  };
-  openModal();
-}
-setInterval(()=>{let changed=false;orders.forEach(o=>{if(['Menunggu Bayar','Menunggu ACC COD'].includes(o.status)&&Date.now()>o.deadline){o.status='Batal Otomatis';changed=true;}}); if(changed){write('orders',orders);pushNotif('Ada order auto-cancel karena lewat 24 jam');renderAll();}},60000);
-
-// === FITUR === Topup saldo admin ACC + mutasi
-function walletUI(){const u=me();$('#walletBox').innerHTML=`<h4>${tr('wallet')}</h4><div>${tr('saldo')}: <b>${money(u.saldo)}</b></div>
-<div class='row'><input id='depAmount' type='number' placeholder='Nominal topup'><button id='depBtn'>${tr('deposit')}</button></div>
-<div class='small'>Mutasi:</div>${u.mutasi.map(m=>`<div class='small'>${new Date(m.time).toLocaleString()} - ${m.type} ${money(m.amount)} (${m.note})</div>`).join('')||'<small>-</small>'}`;
-  $('#depBtn').onclick=()=>{topups.unshift({id:'T'+Date.now(),user:u.username,amount:+$('#depAmount').value,status:'pending',time:now()});write('topups',topups);pushNotif('Pengajuan topup baru','admin');alert('Topup menunggu ACC admin');};
+function renderSellerBox(u){
+  if(u.isAdmin){ $('#sellerBox').innerHTML='<h4>Seller Center</h4><div class="small muted">Admin tidak perlu daftar seller.</div>'; return; }
+  $('#sellerBox').innerHTML=!u.seller
+    ? `<h4>Seller Center</h4><div class='small muted'>Daftar seller untuk mulai upload produk toko.</div><button id='beSeller'>Daftar Seller</button>`
+    : `<h4>Seller Center</h4><div class='small'>Status: Seller aktif</div><div class='row'><input id='pn' placeholder='Nama produk'><input id='pp' type='number' placeholder='Harga'></div><div class='row'><input id='ps' type='number' placeholder='Stok'><input id='pi' placeholder='URL gambar'></div><button id='addP'>Tambah Produk</button>`;
+  if(!u.seller){ $('#beSeller').onclick=()=>{u.seller=true;write('users',users);renderAll();toast('Seller aktif.');}; return; }
+  $('#addP').onclick=()=>{
+    if(!$('#pn').value||!$('#pp').value||!$('#ps').value) return toast('Lengkapi data produk dulu.');
+    products.unshift({id:'P-'+uid(),name:$('#pn').value,price:+$('#pp').value,stock:+$('#ps').value,image:$('#pi').value,store:u.username});
+    write('products',products); renderHome(); toast('Produk berhasil ditambahkan.');
+  }
 }
 
-// === FITUR === Seller center
-function sellerUI(){const u=me();const myOrders=orders.filter(o=>o.items.some(i=>i.store===u.seller?.storeName));const omzet=myOrders.filter(o=>o.status==='Selesai').reduce((a,b)=>a+b.total,0);
-  $('#tab-seller').innerHTML=!u.seller?`<h4>Daftar Seller</h4><input id='sn' placeholder='Nama toko'><input id='sl' placeholder='URL logo'><input id='st' placeholder='Warna tema (#3B82F6)'><textarea id='sd' placeholder='Deskripsi toko'></textarea><button id='regSeller'>Daftar Seller</button>`:
-  `<h4>Seller: ${u.seller.storeName}</h4><div class='small'>Rating ${u.seller.rating} • Gabung ${u.seller.joinYear} • Total Produk ${read('products',[]).filter(p=>p.store===u.seller.storeName).length}</div>
-  <div class='row'><div class='panel small'>Omzet ${money(omzet)}</div><div class='panel small'>Pesanan ${myOrders.length}</div></div>
-  <canvas id='salesChart' height='120'></canvas>
-  <h5>Upload Produk</h5><input id='pn' placeholder='Nama'><div class='row'><input id='pp' type='number' placeholder='Harga'><input id='ps' type='number' placeholder='Stok'></div>
-  <div class='row'><input id='pc' placeholder='Kategori'><input id='pi' placeholder='URL gambar'></div><div class='row'><input id='psz' placeholder='Ukuran S,M,L'><input id='pcl' placeholder='Warna Hitam,Putih'></div><button id='addProd'>Tambah Produk</button>
-  <h5>Pesanan Masuk</h5>${myOrders.map(o=>`<div class='small panel'>${o.id} - ${o.status} ${o.resi?(' Resi:'+o.resi):''}<div class='row'><button onclick="setStatus('${o.id}','Dikemas')">Kemas</button><button onclick="setStatus('${o.id}','Dikirim')">Kirim</button><input id='resi_${o.id}' placeholder='No Resi'></div></div>`).join('')||'-'}
-  <h5>Voucher Toko</h5><div class='row'><input id='vc' placeholder='KODE'><input id='vn' type='number' placeholder='Nominal'><input id='vm' type='number' placeholder='Min'></div><button id='mkV'>Buat Voucher</button>`;
-  if(!u.seller){$('#regSeller').onclick=()=>{u.seller={storeName:$('#sn').value,logo:$('#sl').value,theme:$('#st').value||'#3B82F6',desc:$('#sd').value,rating:4.8,totalProduk:0,joinYear:new Date().getFullYear()};write('users',users);renderAll();};return;}
-  $('#addProd').onclick=()=>{const ps=read('products',[]);ps.unshift({id:'UP'+Date.now(),name:$('#pn').value,price:+$('#pp').value,stock:+$('#ps').value,rating:5,sold:0,category:$('#pc').value,store:u.seller.storeName,image:$('#pi').value||'https://picsum.photos/seed/new/300/300',variants:{size:$('#psz').value.split(','),color:$('#pcl').value.split(','),varStock:{}}});write('products',ps);renderProducts();alert('Produk ditambah');};
-  $('#mkV').onclick=()=>{storeVouchers.push({code:$('#vc').value,nominal:+$('#vn').value,min:+$('#vm').value,store:u.seller.storeName});write('storeVouchers',storeVouchers);alert('Voucher toko dibuat');};
-  setTimeout(()=>{new Chart(document.getElementById('salesChart'),{type:'line',data:{labels:['Sen','Sel','Rab','Kam','Jum','Sab','Min'],datasets:[{label:'Penjualan',data:[5,6,8,4,10,7,12],borderColor:'#3B82F6'}]}})},50);
-}
-function setStatus(id,st){const o=orders.find(x=>x.id===id);if(!o)return; if(st==='Dikirim')o.resi=$('#resi_'+id).value||o.resi;o.status=st;write('orders',orders);pushNotif('Status '+id+' menjadi '+st,o.user);renderAll();}
-
-// === FITUR === Chat buyer<>seller realtime per produk
-function renderChat(){const u=sessions.username; const allOrders=orders.filter(o=>o.user===u); const opts=allOrders.flatMap(o=>o.items.map(i=>({id:i.pid,name:i.name}))); $('#chatProduct').innerHTML=opts.map(o=>`<option value='${o.id}'>${o.name}</option>`).join('')||'<option>-</option>'; drawChat();}
-function drawChat(){const u=sessions.username,p=$('#chatProduct').value;if(!u||!p)return;const key=[u,p].join('__');const msgs=chats[key]||[];$('#chatBox').innerHTML=msgs.map(m=>`<div class='msg ${m.from===u?'me':'other'}'>${m.text}<br><small>${new Date(m.time).toLocaleTimeString()}</small></div>`).join('');$('#chatBox').scrollTop=999999;}
-$('#sendChat').onclick=()=>{const u=sessions.username,p=$('#chatProduct').value,t=$('#chatText').value.trim();if(!t)return;const key=[u,p].join('__');chats[key]=chats[key]||[];chats[key].push({from:u,text:t,time:now()});write('chats',chats);$('#chatText').value='';drawChat();pushNotif('Chat masuk dari '+u,'admin');};
-window.addEventListener('storage',e=>{if(e.key===KEY+'chats'){chats=read('chats',{});drawChat();}});
-
-// === FITUR === Riwayat pesanan + beli lagi + lacak resi
-function ordersUI(){const u=me();let f='Semua';
-  const render=()=>{const list=orders.filter(o=>o.user===u.username&&(f==='Semua'||o.status===f));$('#tab-orders').innerHTML=`<h4>Riwayat Pesanan</h4><div class='row'><button class='outline' onclick="setFilter('Semua')">Semua</button><button class='outline' onclick="setFilter('Dikemas')">Dikemas</button><button class='outline' onclick="setFilter('Dikirim')">Dikirim</button><button class='outline' onclick="setFilter('Selesai')">Selesai</button></div>
-      ${list.map(o=>`<div class='small panel'>${o.id} • ${o.status} • ${money(o.total)}<br>Countdown: ${countdown(o.deadline)} ${o.resi?'<br>Resi:'+o.resi:''}<div class='row'><button onclick="buyAgain('${o.id}')">Beli Lagi</button><button class='outline' onclick="trackResi('${o.id}')">Lacak</button></div></div>`).join('')||'-'}`;};
-  window.setFilter=v=>{f=v;render()}; window.buyAgain=id=>{const o=orders.find(x=>x.id===id);if(!o)return; carts[u.username]=(carts[u.username]||[]).concat(o.items);write('carts',carts);renderBadges();alert('Masuk keranjang');};
-  window.trackResi=id=>{const o=orders.find(x=>x.id===id);alert(o.resi?`Resi ${o.resi} status ${o.status}`:'Belum ada resi');}; render();
-}
-const countdown=d=>{const s=Math.max(0,Math.floor((d-Date.now())/1000));const h=Math.floor(s/3600),m=Math.floor((s%3600)/60);return `${h}j ${m}m`};
-
-// === FITUR === Settings lengkap + profil/bahasa/mata uang/info akun/kontak admin
-function settingsUI(){const u=me();$('#tab-settings').innerHTML=`<h4>Pengaturan</h4>
-  <div class='small'>Informasi Akun: daftar ${new Date(u.createdAt).toLocaleDateString()}, total belanja ${money(u.totalBelanja||0)}, level ${u.level||'Bronze'}</div>
-  <input id='newU' placeholder='Ganti username'><input id='newP' placeholder='Ganti password'><input id='newPhoto' placeholder='URL foto profil'><input id='newPhone' placeholder='No HP'><textarea id='newAddr' placeholder='Alamat lengkap'></textarea>
-  <div class='row'><select id='lang'><option value='id'>ID</option><option value='en'>EN</option></select><select id='cur'><option>IDR</option><option>USD</option></select></div>
-  <button id='saveSet'>Simpan Profil & Preferensi</button>
-  <div class='small'>Informasi Aplikasi: v1.0.0 • CS WA ${app.admin.wa} • Syarat: transaksi final saat status selesai. Slot iklan banner 300x100 tersedia untuk disewa.</div>
-  <a href='https://wa.me/${app.admin.wa}' target='_blank'><button class='outline'>${tr('contact')}</button></a>`;
-  $('#lang').value=app.lang;$('#cur').value=app.currency;
-  $('#saveSet').onclick=()=>{if($('#newU').value){if(users.some(x=>x.username===$('#newU').value)) return alert('username sudah dipakai');u.username=$('#newU').value;sessions.username=u.username;write('session',sessions);} if($('#newP').value)u.password=$('#newP').value;u.profile.photo=$('#newPhoto').value||u.profile.photo;u.profile.phone=$('#newPhone').value||u.profile.phone;if($('#newAddr').value){u.profile.address=$('#newAddr').value;u.profile.addressHistory.unshift($('#newAddr').value);} app.lang=$('#lang').value;app.currency=$('#cur').value;write('users',users);write('app',app);renderAll();};
+function renderAdminBox(u){
+  if(!u.isAdmin){ $('#adminBox').innerHTML='<h4>Admin Center</h4><div class="small muted">Hanya admin yang bisa jual voucher topup game.</div>'; return; }
+  $('#adminBox').innerHTML=`<h4>Admin Center</h4><div class='small muted'>Kelola voucher topup game + katalog admin.</div>
+  <div class='row'><input id='tn' placeholder='Nama voucher'><input id='tp' type='number' placeholder='Harga'></div>
+  <div class='row'><input id='ts' type='number' placeholder='Stok'><input id='ti' placeholder='URL banner voucher'></div>
+  <button id='addTopup'>Tambah Voucher Topup</button>
+  <hr><div class='small'>Voucher aktif: ${topupProducts.length}</div>`;
+  $('#addTopup').onclick=()=>{
+    if(!$('#tn').value||!$('#tp').value||!$('#ts').value) return toast('Lengkapi data voucher terlebih dahulu.');
+    topupProducts.unshift({id:'T-'+uid(),name:$('#tn').value,price:+$('#tp').value,stock:+$('#ts').value,image:$('#ti').value,store:'Admin Store'});
+    write('topupProducts',topupProducts); renderTopup(); toast('Voucher topup berhasil ditambahkan.');
+  }
 }
 
-// === FITUR === Admin panel
-function adminUI(){const u=me(); if(!u?.isAdmin){$('#tab-admin').innerHTML='Login sebagai admin untuk akses panel.';return;}
-  $('#tab-admin').innerHTML=`<h4>Admin Panel</h4><div class='small'>Akun khusus: admin/admin</div>
-  <h5>ACC Topup</h5>${topups.filter(t=>t.status==='pending').map(t=>`<div class='small panel'>${t.user} minta ${money(t.amount)}<div class='row'><button onclick="accTop('${t.id}',1)">ACC</button><button class='danger' onclick="accTop('${t.id}',0)">Tolak</button></div></div>`).join('')||'-'}
-  <h5>ACC COD</h5>${orders.filter(o=>o.status==='Menunggu ACC COD').map(o=>`<div class='small panel'>${o.id} ${o.user} ${money(o.total)}<div class='row'><button onclick="accCOD('${o.id}',1)">ACC</button><button class='danger' onclick="accCOD('${o.id}',0)">Tolak</button></div></div>`).join('')||'-'}
-  <h5>Semua transaksi</h5><div class='small'>${orders.map(o=>`${o.id}:${o.status}:${money(o.total)}`).join('<br>')}</div>
-  <h5>Atur admin</h5><input id='rek' value='${app.admin.rekening}'><input id='wa' value='${app.admin.wa}'><input id='kom' type='number' value='${app.admin.komisi}'>
-  <h5>Banner iklan</h5>${app.admin.banners.map((b,i)=>`<div class='row'><input id='bi${i}' value='${b.img}'><input id='bl${i}' value='${b.link}'></div>`).join('')}
-  <button id='saveAdmin'>Simpan Pengaturan Admin</button>`;
-  $('#saveAdmin').onclick=()=>{app.admin.rekening=$('#rek').value;app.admin.wa=$('#wa').value;app.admin.komisi=+$('#kom').value;app.admin.banners=app.admin.banners.map((b,i)=>({img:$('#bi'+i).value,link:$('#bl'+i).value}));write('app',app);renderBanner();alert('Tersimpan');};
-}
-window.accTop=(id,ok)=>{const t=topups.find(x=>x.id===id);if(!t)return; t.status=ok?'acc':'tolak'; if(ok){const u=users.find(x=>x.username===t.user);u.saldo+=t.amount;u.mutasi.unshift({time:now(),type:'masuk',amount:t.amount,note:'Topup di-ACC'});pushNotif('Topup kamu di-ACC',u.username);} write('topups',topups);write('users',users);renderAll();};
-window.accCOD=(id,ok)=>{const o=orders.find(x=>x.id===id);if(!o)return;o.status=ok?'Diproses':'COD Ditolak';write('orders',orders);pushNotif('Order '+id+' '+o.status,o.user);renderAll();};
-
-// === FITUR === Auth forms
-function authUI(){const u=me();if(u){$('#authBox').classList.add('hidden');$('#userBox').classList.remove('hidden');walletUI();ordersUI();sellerUI();settingsUI();adminUI();renderChat();return;}
-  $('#authBox').classList.remove('hidden');$('#userBox').classList.add('hidden');
-  $('#authBox').innerHTML=`<h4>Login / Register</h4><input id='un' placeholder='Username'><input id='pw' type='password' placeholder='Password'><div class='row'><button id='lg'>Login</button><button class='outline' id='rg'>Register</button></div><small>Admin: admin/admin</small>`;
-  $('#lg').onclick=()=>{const u=users.find(x=>x.username===$('#un').value&&x.password===$('#pw').value);if(!u)return alert('Salah');sessions.username=u.username;write('session',sessions);renderAll();};
-  $('#rg').onclick=()=>{if(users.some(x=>x.username===$('#un').value))return alert('Username dipakai');users.push({username:$('#un').value,password:$('#pw').value,createdAt:now(),isAdmin:false,saldo:0,mutasi:[],profile:{photo:'',phone:'',address:'',addressHistory:[]},orders:[],wishlist:[],seller:null,totalBelanja:0,level:'Bronze'});write('users',users);alert('Register sukses');};
+function renderOrders(){
+  if(!me()) return;
+  const mine=orders.filter(o=>o.user===me().username);
+  $('#orderBox').innerHTML='<h4>Pesanan Saya</h4>' + (mine.map(o=>`<div class='panel small'>${statusChip(o.status)} <b>${o.id}</b><br>Total: <b>${money(o.total)}</b><br><span class='muted'>${new Date(o.createdAt).toLocaleString()}</span><details><summary>Timeline</summary>${o.timeline.map(t=>`<div>• ${new Date(t.time).toLocaleTimeString()} - ${t.status}<br><span class='muted'>${t.note}</span></div>`).join('')}</details></div>`).join('') || '<div class="small muted">Belum ada pesanan.</div>');
 }
 
-// === FITUR === UI navigation/modal/notif list
-function openModal(){ $('#modal').classList.add('show'); }
-function closeModal(){ $('#modal').classList.remove('show'); }
-$('#modal').onclick=e=>{if(e.target.id==='modal')closeModal()};
-$('.bottom').onclick=e=>{const b=e.target.closest('.navbtn'); if(!b)return; $$('.navbtn').forEach(x=>x.classList.remove('active')); b.classList.add('active'); const v=b.dataset.view; $$('.view').forEach(s=>s.classList.remove('active')); $('#v-'+v).classList.add('active'); if(v==='cart')renderCart(); if(v==='account')authUI(); if(v==='chat')renderChat();};
-$('#btnCart').onclick=()=>{$$('.navbtn[data-view="cart"]')[0].click()};
-$('#btnNotif').onclick=()=>{const u=sessions.username;const ns=app.notifs.filter(n=>n.to==='all'||n.to===u);$('#modalBody').innerHTML='<h4>Notifikasi</h4>'+ns.map(n=>`<div class="panel small">${n.text}<br>${new Date(n.time).toLocaleString()}</div>`).join('')||'-';app.notifs=app.notifs.map(n=>(n.to==='all'||n.to===u)?({...n,read:true}):n);write('app',app);renderBadges();openModal();};
+function renderFeed(){
+  const u=me();
+  $('#feedComposer').classList.toggle('hidden',!u);
+  $('#feedComposer').innerHTML=u?`<h4>Posting Gambar / Video</h4><textarea id='cap' placeholder='Tulis caption...'></textarea><input id='media' placeholder='URL gambar/video (mp4/webm)'><button id='postBtn'>Posting</button><div class='small muted'>Konten hanya untuk promosi legal. Dilarang spam.</div>`:'';
+  if(u) $('#postBtn').onclick=()=>{if(!$('#media').value.trim())return toast('URL media wajib diisi.');feed.unshift({id:uid(),user:u.username,caption:$('#cap').value,url:$('#media').value,time:now()});write('feed',feed);renderFeed();toast('Postingan berhasil dipublish.');};
+  $('#feedList').innerHTML=feed.map(f=>{const isVideo=/\.(mp4|webm|ogg)$/i.test(f.url);return `<div class='card'><div class='small muted'>@${f.user} • ${new Date(f.time).toLocaleString()}</div><div style='margin:6px 0'><b>${f.caption||'-'}</b></div>${isVideo?`<video class='media' controls src='${f.url}'></video>`:`<img class='media' src='${f.url}' alt='post'>`}</div>`}).join('')||"<div class='panel small muted'>Belum ada postingan.</div>";
+}
 
-// === FITUR === event bindings
-;['#search','#catFilter','#minP','#maxP','#ratingFilter','#sortBy'].forEach(id=>$(id).addEventListener('input',()=>{page=1;renderProducts()}));
-$('#prevPage').onclick=()=>{page=Math.max(1,page-1);renderProducts()}; $('#nextPage').onclick=()=>{page++;renderProducts()};
-$$('[data-tab]').forEach(b=>b.onclick=()=>{const t=b.dataset.tab;['orders','seller','settings','admin'].forEach(x=>$('#tab-'+x).classList.toggle('hidden',x!==t));});
-$('#logoutBtn').onclick=()=>{sessions.username=null;write('session',sessions);renderAll();};
+function renderAll(){
+  users=read('users',users);session=read('session',session);products=read('products',products);carts=read('carts',carts);orders=read('orders',orders);topupProducts=read('topupProducts',topupProducts);feed=read('feed',feed);
+  renderHome(); renderTopup(); renderCart(); renderAuth(); renderFeed();
+  $('#btnLoginHint').textContent=me()?`Hi, ${me().username}`:'Login';
+}
 
-function renderAll(){users=read('users',users);orders=read('orders',orders);topups=read('topups',topups);app=read('app',app);carts=read('carts',carts);chats=read('chats',chats);
-  const cats=[...new Set(read('products',[]).map(p=>p.category))];$('#catFilter').innerHTML='<option value="">Semua Kategori</option>'+cats.map(c=>`<option>${c}</option>`).join(''); renderBanner();renderProducts();renderCart();authUI();renderBadges();}
+$('#search').oninput=renderHome;
+$('#btnLoginHint').onclick=()=>{if(!me()){toast('Harap login dulu melalui tab Akun.');} else {$('.nb[data-v="account"]').click();}}
+$('.nav').onclick=e=>{const b=e.target.closest('.nb');if(!b)return;$$('.nb').forEach(x=>x.classList.remove('active'));b.classList.add('active');$$('.view').forEach(v=>v.classList.remove('active'));$('#v-'+b.dataset.v).classList.add('active');if(b.dataset.v==='cart')renderCart();if(b.dataset.v==='account')renderAuth();if(b.dataset.v==='feed')renderFeed();if(b.dataset.v==='topup')renderTopup();}
+$('#logout').onclick=()=>{session.username=null;write('session',session);toast('Anda telah logout.');renderAll();}
+
 renderAll();
 </script>
 </body>
