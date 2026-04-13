@@ -6,7 +6,7 @@
   <title>TokoKu Super App</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
-    :root{--bg:#fff;--blue:#3B82F6;--text:#0f172a;--muted:#64748b;--line:#e2e8f0;--danger:#ef4444;}
+    :root{--bg:#fff;--blue:#3B82F6;--text:#0f172a;--muted:#64748b;--line:#e2e8f0;--danger:#ef4444;--ok:#16a34a;--warn:#f59e0b;}
     *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
     body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--text);padding-bottom:78px}
     .app{max-width:900px;margin:0 auto}
@@ -52,6 +52,12 @@
     .me{margin-left:auto;background:#dbeafe}.other{background:#f1f5f9}
     .tabs{display:flex;gap:6px;overflow:auto}.tabs button{white-space:nowrap;padding:8px 10px;font-size:12px}
     .muted{color:var(--muted)}
+    .empty{border:1px dashed var(--line);border-radius:12px;padding:16px;text-align:center;color:var(--muted);background:#f8fafc}
+    .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:92px;z-index:99;background:#0f172a;color:#fff;padding:10px 14px;border-radius:12px;font-size:12px;box-shadow:0 8px 20px #0004;opacity:0;pointer-events:none;transition:.2s}
+    .toast.show{opacity:1}
+    .mutasi-item{padding:8px;border:1px solid var(--line);border-radius:10px;margin-top:6px;background:#f8fafc}
+    .chip{display:inline-block;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:700}
+    .in{background:#dcfce7;color:#166534}.out{background:#fee2e2;color:#991b1b}.pending{background:#fef3c7;color:#92400e}
   </style>
 </head>
 <body>
@@ -120,6 +126,7 @@
 </div>
 
 <div class="modal" id="modal"><div class="sheet" id="modalBody"></div></div>
+<div id="toast" class="toast"></div>
 
 <script>
 // === FITUR === Utilitas & Penyimpanan
@@ -130,27 +137,26 @@ const uid=()=>Math.random().toString(36).slice(2,9);
 const now=()=>new Date().toISOString();
 const read=(k,d)=>JSON.parse(localStorage.getItem(KEY+k)||JSON.stringify(d));
 const write=(k,v)=>localStorage.setItem(KEY+k,JSON.stringify(v));
+const fmtTime=t=>new Date(t).toLocaleString('id-ID',{dateStyle:'medium',timeStyle:'short'});
+function notify(msg,type='info'){
+  const t=$('#toast');
+  t.textContent=msg;
+  t.style.background=type==='ok'?'#166534':type==='warn'?'#92400e':'#0f172a';
+  t.classList.add('show');
+  clearTimeout(notify._timer);
+  notify._timer=setTimeout(()=>t.classList.remove('show'),2400);
+}
 
 // === FITUR === i18n + Currency
 const T={id:{checkout:'Checkout',saldo:'Saldo',deposit:'Deposit',wallet:'Dompet',contact:'Kontak Admin'},en:{checkout:'Checkout',saldo:'Balance',deposit:'Deposit',wallet:'Wallet',contact:'Contact Admin'}};
-let app=read('app', {lang:'id',currency:'IDR',usdRate:16000,admin:{wa:'628123456789',rekening:'BCA 1234567',komisi:5,banners:[{img:'https://picsum.photos/seed/a/800/240',link:'#'},{img:'https://picsum.photos/seed/b/800/240',link:'#'},{img:'https://picsum.photos/seed/c/800/240',link:'#'}]},notifs:[]});
+let app=read('app', {lang:'id',currency:'IDR',usdRate:16000,admin:{wa:'628123456789',rekening:'BCA 1234567',komisi:0.6,banners:[{img:'https://picsum.photos/seed/a/800/240',link:'#'},{img:'https://picsum.photos/seed/b/800/240',link:'#'},{img:'https://picsum.photos/seed/c/800/240',link:'#'}]},paymentWindowHours:24,completeDelayMinutes:120,notifs:[]});
 const tr=k=>T[app.lang][k]||k;
 const money=n=>app.currency==='IDR'?`Rp ${Math.round(n).toLocaleString('id-ID')}`:`$ ${(n/app.usdRate).toFixed(2)}`;
 
-// === FITUR === Data Demo 100+ produk
-function seedProducts(){
-  if(read('products',[]).length) return;
-  const cats=['Elektronik','Fashion','Rumah','Makanan','Olahraga'];
-  const colors=['Hitam','Putih','Biru','Merah'];
-  const sizes=['S','M','L','XL'];
-  const p=[];
-  for(let i=1;i<=120;i++){
-    const cat=cats[i%cats.length],price=15000+(i*2300),rating=+(3+Math.random()*2).toFixed(1);
-    p.push({id:'P'+i,name:`Produk ${i}`,price,stock:10+(i%20),rating,sold:Math.floor(Math.random()*900),category:cat,store:`Toko ${1+i%9}`,image:`https://picsum.photos/seed/prod${i}/300/300`,wish:false,variants:{size:sizes,color:colors,varStock:{}}});
-  }
-  write('products',p);
-}
-seedProducts();
+if(typeof app.admin.komisi!=='number') app.admin.komisi=0.6;
+if(typeof app.completeDelayMinutes!=='number') app.completeDelayMinutes=120;
+if(typeof app.paymentWindowHours!=='number') app.paymentWindowHours=24;
+write('app',app);
 
 // === FITUR === Auth/Register + data buyer/seller
 let users=read('users',[{username:'admin',password:'admin',createdAt:now(),isAdmin:true,saldo:0,mutasi:[],profile:{photo:'',phone:'',address:'',addressHistory:[]},orders:[],wishlist:[],seller:null,totalBelanja:0,level:'Bronze'}]);
@@ -179,7 +185,9 @@ function filteredProducts(){
 function renderProducts(){
   const ps=filteredProducts(); const maxPage=Math.max(1,Math.ceil(ps.length/perPage)); page=Math.min(page,maxPage);
   const start=(page-1)*perPage;const show=ps.slice(start,start+perPage);const u=me();
-  $('#products').innerHTML=show.map(p=>`<div class='card'>
+  if(!show.length){
+    $('#products').innerHTML=`<div class="empty" style="grid-column:1 / -1">Belum ada item. Admin dan reseller bisa mulai menambahkan produk dari Seller Center.</div>`;
+  }else $('#products').innerHTML=show.map(p=>`<div class='card'>
     <img loading='lazy' src='${p.image}' alt='${p.name}'>
     <div><b>${p.name}</b> <span data-id='${p.id}' class='wish' style='float:right;cursor:pointer'>${u?.wishlist?.includes(p.id)?'❤️':'🤍'}</span></div>
     <div class='meta'>${p.store} • ⭐${p.rating} • Terjual ${p.sold}</div><div class='meta'>Stok ${p.stock} • ${p.category}</div>
@@ -191,7 +199,7 @@ function renderProducts(){
   $$('.wish').forEach(w=>w.onclick=()=>toggleWish(w.dataset.id));
 }
 function toggleWish(pid){
-  const u=me(); if(!u) return alert('Login dulu');
+  const u=me(); if(!u) return notify('Silakan login terlebih dahulu untuk menggunakan wishlist.','warn');
   u.wishlist=u.wishlist||[];
   if(u.wishlist.includes(pid)) u.wishlist=u.wishlist.filter(x=>x!==pid);
   else u.wishlist.push(pid);
@@ -199,7 +207,7 @@ function toggleWish(pid){
 }
 
 // === FITUR === Cart varian qty hapus
-function addCart(pid){if(!sessions.username) return alert('Login dulu'); const p=read('products',[]).find(x=>x.id===pid),u=sessions.username; carts[u]=carts[u]||[];
+function addCart(pid){if(!sessions.username) return notify('Harap login dulu. Halaman ini khusus pengguna yang sudah masuk.','warn'); const p=read('products',[]).find(x=>x.id===pid),u=sessions.username; carts[u]=carts[u]||[];
   const size=$(`#sz_${pid}`).value,color=$(`#cl_${pid}`).value,key=pid+size+color;let it=carts[u].find(i=>i.key===key);
   if(it) it.qty++; else carts[u].push({key,pid,size,color,qty:1,price:p.price,name:p.name,store:p.store}); write('carts',carts); beep('ting'); renderBadges(); renderCart();}
 function renderCart(){const u=sessions.username||'_';const list=carts[u]||[];$('#cartList').innerHTML=list.map((i,idx)=>`<div class='panel small'><b>${i.name}</b> (${i.size}/${i.color})<br>${money(i.price)} x ${i.qty}
@@ -221,9 +229,9 @@ function openCheckout(){
   const recalc=()=>{const ship=$('#ship').value==='exp'?25000:12000;let disc=0;const v=$('#voucher').value.trim();const all=[...marketVouchers,...storeVouchers];const f=all.find(x=>x.code===v&&sub>=x.min);if(f)disc=f.nominal;$('#sum').innerHTML=`Total: <b>${money(sub+ship-disc)}</b> (diskon ${money(disc)})`; return {ship,disc,total:sub+ship-disc};};
   $('#ship').onchange=$('#voucher').oninput=recalc;recalc();
   $('#payNow').onclick=()=>{const u=me();const {ship,disc,total}=recalc();const method=$('#pay').value; if(method==='Saldo'&&u.saldo<total)return alert('Saldo kurang');
-    const od={id:'O'+Date.now(),user:u.username,items,address:$('#addr').value,phone:$('#phone').value,ship:$('#ship').value,shipCost:ship,discount:disc,total,method,status:method==='COD'?'Menunggu ACC COD':'Menunggu Bayar',resi:'',createdAt:now(),deadline:Date.now()+86400000};
+    const od={id:'O'+Date.now(),user:u.username,items,address:$('#addr').value,phone:$('#phone').value,ship:$('#ship').value,shipCost:ship,discount:disc,total,method,status:method==='COD'?'Menunggu ACC COD':'Menunggu Bayar',resi:'',createdAt:now(),deadline:Date.now()+(app.paymentWindowHours*3600000)};
     orders.unshift(od);write('orders',orders); carts[u.username]=[];write('carts',carts); if(method==='Saldo'){u.saldo-=total;u.mutasi.unshift({time:now(),type:'keluar',amount:total,note:'Checkout '+od.id});}
-    if(method!=='COD')u.mutasi.unshift({time:now(),type:'keluar',amount:0,note:'Batas bayar 24 jam '+od.id});
+    if(method!=='COD')u.mutasi.unshift({time:now(),type:'pending',amount:0,note:`Batas bayar ${app.paymentWindowHours} jam (${od.id})`});
     if(method==='Transfer')pushNotif('Pesanan '+od.id+' menunggu transfer',u.username); if(method==='COD')pushNotif('Order COD butuh ACC admin', 'admin');
     if(u.seller) pushNotif('Order baru masuk ke seller',u.username); write('users',users); beep('cash'); closeModal(); renderAll();
   };
@@ -234,26 +242,49 @@ setInterval(()=>{let changed=false;orders.forEach(o=>{if(['Menunggu Bayar','Menu
 // === FITUR === Topup saldo admin ACC + mutasi
 function walletUI(){const u=me();$('#walletBox').innerHTML=`<h4>${tr('wallet')}</h4><div>${tr('saldo')}: <b>${money(u.saldo)}</b></div>
 <div class='row'><input id='depAmount' type='number' placeholder='Nominal topup'><button id='depBtn'>${tr('deposit')}</button></div>
-<div class='small'>Mutasi:</div>${u.mutasi.map(m=>`<div class='small'>${new Date(m.time).toLocaleString()} - ${m.type} ${money(m.amount)} (${m.note})</div>`).join('')||'<small>-</small>'}`;
+<div class='small' style='margin-top:8px'>Mutasi modern:</div>${u.mutasi.map(m=>`<div class='mutasi-item small'><span class='chip ${m.type==='masuk'?'in':m.type==='keluar'?'out':'pending'}'>${m.type.toUpperCase()}</span> <b>${money(m.amount)}</b><br>${m.note}<br><span class='muted'>${fmtTime(m.time)}</span></div>`).join('')||'<small>- belum ada transaksi -</small>'}`;
   $('#depBtn').onclick=()=>{topups.unshift({id:'T'+Date.now(),user:u.username,amount:+$('#depAmount').value,status:'pending',time:now()});write('topups',topups);pushNotif('Pengajuan topup baru','admin');alert('Topup menunggu ACC admin');};
 }
 
 // === FITUR === Seller center
 function sellerUI(){const u=me();const myOrders=orders.filter(o=>o.items.some(i=>i.store===u.seller?.storeName));const omzet=myOrders.filter(o=>o.status==='Selesai').reduce((a,b)=>a+b.total,0);
-  $('#tab-seller').innerHTML=!u.seller?`<h4>Daftar Seller</h4><input id='sn' placeholder='Nama toko'><input id='sl' placeholder='URL logo'><input id='st' placeholder='Warna tema (#3B82F6)'><textarea id='sd' placeholder='Deskripsi toko'></textarea><button id='regSeller'>Daftar Seller</button>`:
+  if(!u.seller){
+    if(u.sellerRequest?.status==='pending'){
+      $('#tab-seller').innerHTML=`<h4>Registrasi Reseller</h4><div class='empty'>Permintaan akun reseller kamu sedang menunggu konfirmasi admin.</div>
+      <div class='small'>Wajib konfirmasi ke WA admin: <b>${app.admin.wa}</b>.</div>
+      <a href='https://wa.me/${app.admin.wa}?text=Halo%20admin%2C%20saya%20${encodeURIComponent(u.username)}%20sudah%20mengajukan%20akun%20reseller.' target='_blank'><button class='outline'>Konfirmasi via WhatsApp Admin</button></a>`;
+      return;
+    }
+    $('#tab-seller').innerHTML=`<h4>Daftar Reseller</h4><div class='small'>Komisi per penjualan: <b>${app.admin.komisi}%</b> dari nilai transaksi selesai.</div>
+    <input id='sn' placeholder='Nama toko'><input id='sl' placeholder='URL logo'><input id='st' placeholder='Warna tema (#3B82F6)'><textarea id='sd' placeholder='Deskripsi toko'></textarea><button id='regSeller'>Ajukan Akun Reseller</button>
+    <a href='https://wa.me/${app.admin.wa}?text=Halo%20admin%2C%20saya%20ingin%20daftar%20reseller%20di%20aplikasi.' target='_blank'><button class='outline'>Konfirmasi WA Admin</button></a>`;
+    $('#regSeller').onclick=()=>{
+      u.sellerRequest={status:'pending',requestedAt:now(),storeName:$('#sn').value,logo:$('#sl').value,theme:$('#st').value||'#3B82F6',desc:$('#sd').value};
+      write('users',users);pushNotif(`Permintaan reseller baru dari ${u.username}`,'admin');notify('Pengajuan reseller dikirim. Silakan konfirmasi ke WA admin.','ok');renderAll();
+    };
+    return;
+  }
+  $('#tab-seller').innerHTML=
   `<h4>Seller: ${u.seller.storeName}</h4><div class='small'>Rating ${u.seller.rating} • Gabung ${u.seller.joinYear} • Total Produk ${read('products',[]).filter(p=>p.store===u.seller.storeName).length}</div>
-  <div class='row'><div class='panel small'>Omzet ${money(omzet)}</div><div class='panel small'>Pesanan ${myOrders.length}</div></div>
+  <div class='row'><div class='panel small'>Omzet ${money(omzet)}</div><div class='panel small'>Pesanan ${myOrders.length}</div></div><div class='small'>Komisi admin: ${app.admin.komisi}% / transaksi selesai</div>
   <canvas id='salesChart' height='120'></canvas>
   <h5>Upload Produk</h5><input id='pn' placeholder='Nama'><div class='row'><input id='pp' type='number' placeholder='Harga'><input id='ps' type='number' placeholder='Stok'></div>
   <div class='row'><input id='pc' placeholder='Kategori'><input id='pi' placeholder='URL gambar'></div><div class='row'><input id='psz' placeholder='Ukuran S,M,L'><input id='pcl' placeholder='Warna Hitam,Putih'></div><button id='addProd'>Tambah Produk</button>
   <h5>Pesanan Masuk</h5>${myOrders.map(o=>`<div class='small panel'>${o.id} - ${o.status} ${o.resi?(' Resi:'+o.resi):''}<div class='row'><button onclick="setStatus('${o.id}','Dikemas')">Kemas</button><button onclick="setStatus('${o.id}','Dikirim')">Kirim</button><input id='resi_${o.id}' placeholder='No Resi'></div></div>`).join('')||'-'}
   <h5>Voucher Toko</h5><div class='row'><input id='vc' placeholder='KODE'><input id='vn' type='number' placeholder='Nominal'><input id='vm' type='number' placeholder='Min'></div><button id='mkV'>Buat Voucher</button>`;
-  if(!u.seller){$('#regSeller').onclick=()=>{u.seller={storeName:$('#sn').value,logo:$('#sl').value,theme:$('#st').value||'#3B82F6',desc:$('#sd').value,rating:4.8,totalProduk:0,joinYear:new Date().getFullYear()};write('users',users);renderAll();};return;}
   $('#addProd').onclick=()=>{const ps=read('products',[]);ps.unshift({id:'UP'+Date.now(),name:$('#pn').value,price:+$('#pp').value,stock:+$('#ps').value,rating:5,sold:0,category:$('#pc').value,store:u.seller.storeName,image:$('#pi').value||'https://picsum.photos/seed/new/300/300',variants:{size:$('#psz').value.split(','),color:$('#pcl').value.split(','),varStock:{}}});write('products',ps);renderProducts();alert('Produk ditambah');};
   $('#mkV').onclick=()=>{storeVouchers.push({code:$('#vc').value,nominal:+$('#vn').value,min:+$('#vm').value,store:u.seller.storeName});write('storeVouchers',storeVouchers);alert('Voucher toko dibuat');};
   setTimeout(()=>{new Chart(document.getElementById('salesChart'),{type:'line',data:{labels:['Sen','Sel','Rab','Kam','Jum','Sab','Min'],datasets:[{label:'Penjualan',data:[5,6,8,4,10,7,12],borderColor:'#3B82F6'}]}})},50);
 }
-function setStatus(id,st){const o=orders.find(x=>x.id===id);if(!o)return; if(st==='Dikirim')o.resi=$('#resi_'+id).value||o.resi;o.status=st;write('orders',orders);pushNotif('Status '+id+' menjadi '+st,o.user);renderAll();}
+function setStatus(id,st){const o=orders.find(x=>x.id===id);if(!o)return; if(st==='Dikirim'){o.resi=$('#resi_'+id).value||o.resi;o.completeAfter=Date.now()+(app.completeDelayMinutes*60000);}o.status=st;write('orders',orders);pushNotif('Status '+id+' menjadi '+st,o.user);renderAll();}
+window.finishOrder=id=>{const o=orders.find(x=>x.id===id); if(!o||o.status!=='Dikirim') return;
+  if(Date.now()<(o.completeAfter||0)) return notify('Belum bisa diselesaikan. Tunggu jeda selesai pembayaran.','warn');
+  o.status='Selesai';
+  const sellerName=o.items[0]?.store;
+  const sellerUser=users.find(x=>x.seller?.storeName===sellerName);
+  if(sellerUser){const komisi=o.total*(app.admin.komisi/100);sellerUser.mutasi.unshift({time:now(),type:'keluar',amount:komisi,note:`Komisi admin ${app.admin.komisi}% untuk ${o.id}`});}
+  write('users',users);write('orders',orders);pushNotif(`Order ${id} selesai. Terima kasih!`,o.user);renderAll();
+}
 
 // === FITUR === Chat buyer<>seller realtime per produk
 function renderChat(){const u=sessions.username; const allOrders=orders.filter(o=>o.user===u); const opts=allOrders.flatMap(o=>o.items.map(i=>({id:i.pid,name:i.name}))); $('#chatProduct').innerHTML=opts.map(o=>`<option value='${o.id}'>${o.name}</option>`).join('')||'<option>-</option>'; drawChat();}
@@ -264,7 +295,7 @@ window.addEventListener('storage',e=>{if(e.key===KEY+'chats'){chats=read('chats'
 // === FITUR === Riwayat pesanan + beli lagi + lacak resi
 function ordersUI(){const u=me();let f='Semua';
   const render=()=>{const list=orders.filter(o=>o.user===u.username&&(f==='Semua'||o.status===f));$('#tab-orders').innerHTML=`<h4>Riwayat Pesanan</h4><div class='row'><button class='outline' onclick="setFilter('Semua')">Semua</button><button class='outline' onclick="setFilter('Dikemas')">Dikemas</button><button class='outline' onclick="setFilter('Dikirim')">Dikirim</button><button class='outline' onclick="setFilter('Selesai')">Selesai</button></div>
-      ${list.map(o=>`<div class='small panel'>${o.id} • ${o.status} • ${money(o.total)}<br>Countdown: ${countdown(o.deadline)} ${o.resi?'<br>Resi:'+o.resi:''}<div class='row'><button onclick="buyAgain('${o.id}')">Beli Lagi</button><button class='outline' onclick="trackResi('${o.id}')">Lacak</button></div></div>`).join('')||'-'}`;};
+      ${list.map(o=>`<div class='small panel'>${o.id} • ${o.status} • ${money(o.total)}<br>Deadline bayar: ${countdown(o.deadline)} ${o.resi?'<br>Resi:'+o.resi:''}${o.completeAfter?`<br>Jeda selesai: ${countdown(o.completeAfter)}`:''}<div class='row'><button onclick="buyAgain('${o.id}')">Beli Lagi</button><button class='outline' onclick="trackResi('${o.id}')">Lacak</button>${o.status==='Dikirim'?`<button ${Date.now()<(o.completeAfter||0)?'disabled':''} onclick="finishOrder('${o.id}')">Selesaikan</button>`:''}</div></div>`).join('')||'-'}`;};
   window.setFilter=v=>{f=v;render()}; window.buyAgain=id=>{const o=orders.find(x=>x.id===id);if(!o)return; carts[u.username]=(carts[u.username]||[]).concat(o.items);write('carts',carts);renderBadges();alert('Masuk keranjang');};
   window.trackResi=id=>{const o=orders.find(x=>x.id===id);alert(o.resi?`Resi ${o.resi} status ${o.status}`:'Belum ada resi');}; render();
 }
@@ -285,21 +316,34 @@ function settingsUI(){const u=me();$('#tab-settings').innerHTML=`<h4>Pengaturan<
 // === FITUR === Admin panel
 function adminUI(){const u=me(); if(!u?.isAdmin){$('#tab-admin').innerHTML='Login sebagai admin untuk akses panel.';return;}
   $('#tab-admin').innerHTML=`<h4>Admin Panel</h4><div class='small'>Akun khusus: admin/admin</div>
+  <h5>ACC Akun Reseller</h5>${users.filter(x=>x.sellerRequest?.status==='pending').map(x=>`<div class='small panel'><b>${x.username}</b> mengajukan toko <b>${x.sellerRequest.storeName||'-'}</b><br>${fmtTime(x.sellerRequest.requestedAt)}<div class='row'><button onclick="accSeller('${x.username}',1)">ACC</button><button class='danger' onclick="accSeller('${x.username}',0)">Tolak</button></div></div>`).join('')||'-'}
   <h5>ACC Topup</h5>${topups.filter(t=>t.status==='pending').map(t=>`<div class='small panel'>${t.user} minta ${money(t.amount)}<div class='row'><button onclick="accTop('${t.id}',1)">ACC</button><button class='danger' onclick="accTop('${t.id}',0)">Tolak</button></div></div>`).join('')||'-'}
   <h5>ACC COD</h5>${orders.filter(o=>o.status==='Menunggu ACC COD').map(o=>`<div class='small panel'>${o.id} ${o.user} ${money(o.total)}<div class='row'><button onclick="accCOD('${o.id}',1)">ACC</button><button class='danger' onclick="accCOD('${o.id}',0)">Tolak</button></div></div>`).join('')||'-'}
   <h5>Semua transaksi</h5><div class='small'>${orders.map(o=>`${o.id}:${o.status}:${money(o.total)}`).join('<br>')}</div>
-  <h5>Atur admin</h5><input id='rek' value='${app.admin.rekening}'><input id='wa' value='${app.admin.wa}'><input id='kom' type='number' value='${app.admin.komisi}'>
+  <h5>Atur admin</h5><input id='rek' value='${app.admin.rekening}'><input id='wa' value='${app.admin.wa}'><input id='kom' step='0.1' type='number' value='${app.admin.komisi}'><input id='pwHours' type='number' value='${app.paymentWindowHours}' placeholder='Batas bayar (jam)'><input id='doneDelay' type='number' value='${app.completeDelayMinutes}' placeholder='Jeda selesai (menit)'>
   <h5>Banner iklan</h5>${app.admin.banners.map((b,i)=>`<div class='row'><input id='bi${i}' value='${b.img}'><input id='bl${i}' value='${b.link}'></div>`).join('')}
   <button id='saveAdmin'>Simpan Pengaturan Admin</button>`;
-  $('#saveAdmin').onclick=()=>{app.admin.rekening=$('#rek').value;app.admin.wa=$('#wa').value;app.admin.komisi=+$('#kom').value;app.admin.banners=app.admin.banners.map((b,i)=>({img:$('#bi'+i).value,link:$('#bl'+i).value}));write('app',app);renderBanner();alert('Tersimpan');};
+  $('#saveAdmin').onclick=()=>{app.admin.rekening=$('#rek').value;app.admin.wa=$('#wa').value;app.admin.komisi=+$('#kom').value||0.6;app.paymentWindowHours=Math.max(1,+$('#pwHours').value||24);app.completeDelayMinutes=Math.max(1,+$('#doneDelay').value||120);app.admin.banners=app.admin.banners.map((b,i)=>({img:$('#bi'+i).value,link:$('#bl'+i).value}));write('app',app);renderBanner();notify('Pengaturan admin disimpan.','ok');};
 }
+window.accSeller=(username,ok)=>{
+  const u=users.find(x=>x.username===username); if(!u||!u.sellerRequest)return;
+  if(ok){
+    u.seller={storeName:u.sellerRequest.storeName||`Toko ${u.username}`,logo:u.sellerRequest.logo||'',theme:u.sellerRequest.theme||'#3B82F6',desc:u.sellerRequest.desc||'',rating:5,totalProduk:0,joinYear:new Date().getFullYear()};
+    u.sellerRequest.status='approved';
+    pushNotif('Akun reseller kamu sudah di-ACC admin.',u.username);
+  }else{
+    u.sellerRequest.status='rejected';
+    pushNotif('Pengajuan reseller ditolak admin. Silakan ajukan ulang.',u.username);
+  }
+  write('users',users);renderAll();
+};
 window.accTop=(id,ok)=>{const t=topups.find(x=>x.id===id);if(!t)return; t.status=ok?'acc':'tolak'; if(ok){const u=users.find(x=>x.username===t.user);u.saldo+=t.amount;u.mutasi.unshift({time:now(),type:'masuk',amount:t.amount,note:'Topup di-ACC'});pushNotif('Topup kamu di-ACC',u.username);} write('topups',topups);write('users',users);renderAll();};
 window.accCOD=(id,ok)=>{const o=orders.find(x=>x.id===id);if(!o)return;o.status=ok?'Diproses':'COD Ditolak';write('orders',orders);pushNotif('Order '+id+' '+o.status,o.user);renderAll();};
 
 // === FITUR === Auth forms
 function authUI(){const u=me();if(u){$('#authBox').classList.add('hidden');$('#userBox').classList.remove('hidden');walletUI();ordersUI();sellerUI();settingsUI();adminUI();renderChat();return;}
   $('#authBox').classList.remove('hidden');$('#userBox').classList.add('hidden');
-  $('#authBox').innerHTML=`<h4>Login / Register</h4><input id='un' placeholder='Username'><input id='pw' type='password' placeholder='Password'><div class='row'><button id='lg'>Login</button><button class='outline' id='rg'>Register</button></div><small>Admin: admin/admin</small>`;
+  $('#authBox').innerHTML=`<h4>Login / Register</h4><div class='small muted'>Untuk keamanan, harap login dulu sebelum mengakses fitur transaksi, chat, dan reseller.</div><input id='un' placeholder='Username'><input id='pw' type='password' placeholder='Password'><div class='row'><button id='lg'>Login</button><button class='outline' id='rg'>Register</button></div><small>Admin: admin/admin</small>`;
   $('#lg').onclick=()=>{const u=users.find(x=>x.username===$('#un').value&&x.password===$('#pw').value);if(!u)return alert('Salah');sessions.username=u.username;write('session',sessions);renderAll();};
   $('#rg').onclick=()=>{if(users.some(x=>x.username===$('#un').value))return alert('Username dipakai');users.push({username:$('#un').value,password:$('#pw').value,createdAt:now(),isAdmin:false,saldo:0,mutasi:[],profile:{photo:'',phone:'',address:'',addressHistory:[]},orders:[],wishlist:[],seller:null,totalBelanja:0,level:'Bronze'});write('users',users);alert('Register sukses');};
 }
