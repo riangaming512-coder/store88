@@ -1,1 +1,2420 @@
+<!DOCTYPE html>
+<html lang="id" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title id="page-browser-title">V4 TOPUP - Ultimate Game Top-Up & Digital Store</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Plus Jakarta Sans', 'Inter', 'sans-serif'] },
+                    colors: { 
+                        appBg: 'var(--c-bg)', 
+                        appCard: 'var(--c-card)', 
+                        appText: 'var(--c-text)', 
+                        appMuted: 'var(--c-muted)', 
+                        appBorder: 'var(--c-border)',
+                        appInput: 'var(--c-input)'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Plus+Jakarta+Sans:wght@500;700;800;900&display=swap');
+        
+        :root[data-theme="dark"] {
+            --c-bg: #0b0c10;
+            --c-card: #13151b;
+            --c-text: #ffffff;
+            --c-muted: #9ca3af;
+            --c-border: rgba(255, 255, 255, 0.1);
+            --c-input: #0b0c10;
+        }
+        :root[data-theme="light"] {
+            --c-bg: #f3f4f6;
+            --c-card: #ffffff;
+            --c-text: #111827;
+            --c-muted: #6b7280;
+            --c-border: rgba(0, 0, 0, 0.1);
+            --c-input: #f9fafb;
+        }
+
+        body { background-color: var(--c-bg); color: var(--c-text); -webkit-tap-highlight-color: transparent; transition: background-color 0.3s, color 0.3s; }
+        ::-webkit-scrollbar { display: none; }
+        .hide-scroll { -ms-overflow-style: none; scrollbar-width: none; }
+        .app-view { display: none; opacity: 0; transition: opacity 0.25s ease-in-out; }
+        .app-view.active { display: block; opacity: 1; animation: fadeIn 0.3s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes marquee { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+        .animate-marquee { display: flex; width: max-content; animation: marquee 22s linear infinite; }
+        .animate-marquee:hover { animation-play-state: paused; }
+        #wheelCanvas { transform: rotate(0deg); transition: transform 4s cubic-bezier(0.15, 0.99, 0.18, 1); }
+        .bottom-nav { box-shadow: 0 -4px 20px rgba(0,0,0,0.25); }
+        .toast {
+            position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%);
+            background: #111; color: #fff; padding: 10px 18px; border-radius: 12px;
+            font-size: 12px; font-weight: 600; z-index: 9999; opacity: 0;
+            transition: opacity 0.3s, bottom 0.3s; pointer-events: none;
+            border: 1px solid rgba(255,255,255,0.1); max-width: 90%;
+        }
+        .toast.show { opacity: 1; bottom: 100px; }
+        .admin-notif-bar {
+            position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+            background: linear-gradient(90deg, #f97316, #ef4444);
+            color: white; padding: 10px 16px; font-size: 12px; font-weight: 700;
+            display: none; align-items: center; justify-content: center; gap: 10px;
+            box-shadow: 0 4px 20px rgba(249,115,22,0.4);
+            animation: notifPulse 1.5s ease-in-out infinite;
+        }
+        .admin-notif-bar.show { display: flex; }
+        @keyframes notifPulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.85; }
+        }
+        .success-modal-content {
+            animation: popIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        @keyframes popIn {
+            from { opacity: 0; transform: scale(0.8); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        .qris-preview { max-width: 180px; border-radius: 12px; border: 2px solid rgba(249,115,22,0.4); }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col font-sans antialiased pb-6 selection:bg-orange-500 selection:text-white">
+
+    <!-- Admin Live Notification Bar -->
+    <div id="admin-notif-bar" class="admin-notif-bar" onclick="switchView('kasir'); hideAdminNotif();">
+        <i class="fas fa-bell fa-bounce"></i>
+        <span id="admin-notif-text">Ada transaksi baru menunggu konfirmasi!</span>
+        <button onclick="event.stopPropagation(); hideAdminNotif();" class="ml-2 bg-white/20 px-2 py-0.5 rounded text-[10px]">Tutup</button>
+    </div>
+
+    <!-- Header -->
+    <header class="sticky top-0 z-40 bg-appBg/90 backdrop-blur-md px-4 py-3 border-b border-appBorder shadow-lg transition-colors">
+        <div class="max-w-md mx-auto flex items-center justify-between">
+            <div class="flex items-center gap-2.5 cursor-pointer" onclick="switchView('home')">
+                <div id="store-logo-container" class="w-9 h-9 rounded-xl bg-gradient-to-tr from-orange-600 via-amber-500 to-yellow-400 flex items-center justify-center shadow-lg shadow-orange-500/25 overflow-hidden">
+                    <i id="store-logo-icon" class="fas fa-bolt text-white text-sm"></i>
+                    <img id="store-logo-img" src="" class="w-full h-full object-cover hidden" alt="logo">
+                </div>
+                <div class="flex flex-col">
+                    <span id="store-brand-title" class="font-black text-base tracking-wider text-appText flex items-center gap-1">V4 <span class="text-orange-500">TOPUP</span> <span class="bg-orange-500/20 border border-orange-500/40 text-[8px] text-orange-500 font-extrabold px-1.5 py-0.5 rounded">PRO</span></span>
+                    <span id="user-status-badge" class="text-[9px] text-appMuted font-semibold">Tamu (Belum Login)</span>
+                </div>
+            </div>
+            <div class="flex items-center gap-2">
+                <button onclick="switchView('settings')" title="Pengaturan Akun" class="w-9 h-9 rounded-xl bg-appCard border border-appBorder flex items-center justify-center text-appMuted hover:text-orange-500 transition shadow-sm">
+                    <i class="fas fa-cog text-xs"></i>
+                </button>
+                <button onclick="openModal('menuModal')" class="w-9 h-9 rounded-xl bg-appCard border border-appBorder flex items-center justify-center text-appMuted hover:text-orange-500 transition shadow-sm relative">
+                    <i class="fas fa-bars text-xs"></i>
+                    <span id="notif-dot" class="hidden absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-appCard shadow-[0_0_8px_rgba(239,68,68,0.8)]"></span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-grow max-w-md mx-auto w-full pt-3">
+
+        <!-- HOME -->
+        <div id="view-home" class="app-view active space-y-5">
+            <div class="px-4">
+                <div class="relative rounded-[22px] overflow-hidden aspect-[16/7.5] border border-appBorder shadow-2xl bg-appCard">
+                    <div id="banner-slider-wrapper" class="flex transition-transform duration-500 h-full"></div>
+                    <div id="banner-dots" class="absolute bottom-2.5 right-4 flex gap-1.5 z-20"></div>
+                </div>
+            </div>
+
+            <div class="px-4">
+                <div class="grid grid-cols-4 gap-2 bg-appCard p-2.5 rounded-2xl border border-appBorder shadow-md text-center">
+                    <button onclick="switchView('lacak')" class="flex flex-col items-center gap-1.5 p-1.5 rounded-xl hover:bg-black/5 transition">
+                        <div class="w-10 h-10 rounded-xl bg-orange-500/10 border border-orange-500/30 flex items-center justify-center text-orange-500 shadow-sm">
+                            <i class="fas fa-receipt text-sm"></i>
+                        </div>
+                        <span class="text-[9px] font-bold text-appMuted">Lacak Pesanan</span>
+                    </button>
+                    <button onclick="switchView('cek-id')" class="flex flex-col items-center gap-1.5 p-1.5 rounded-xl hover:bg-black/5 transition">
+                        <div class="w-10 h-10 rounded-xl bg-indigo-500/10 border border-indigo-500/30 flex items-center justify-center text-indigo-500 shadow-sm">
+                            <i class="fas fa-id-card text-sm"></i>
+                        </div>
+                        <span class="text-[9px] font-bold text-appMuted">Cek Region</span>
+                    </button>
+                    <button onclick="switchView('spin-coa')" class="flex flex-col items-center gap-1.5 p-1.5 rounded-xl hover:bg-black/5 transition">
+                        <div id="spin-menu-icon" class="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-500 shadow-sm transition-all duration-300">
+                            <i class="fas fa-dharmachakra text-sm"></i>
+                        </div>
+                        <span class="text-[9px] font-bold text-amber-500">Spin CoA</span>
+                    </button>
+                    <button onclick="switchView('member-wallet')" class="flex flex-col items-center gap-1.5 p-1.5 rounded-xl hover:bg-black/5 transition">
+                        <div class="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-500 shadow-sm">
+                            <i class="fas fa-wallet text-sm"></i>
+                        </div>
+                        <span class="text-[9px] font-bold text-appMuted">Isi Saldo</span>
+                    </button>
+                </div>
+            </div>
+
+            <div>
+                <div class="px-4 mb-3 flex justify-between items-end">
+                    <div class="flex items-center gap-2">
+                        <div class="w-7 h-7 rounded-xl bg-orange-500/20 border border-orange-500/30 flex items-center justify-center text-orange-500 text-xs shadow-md">
+                            <i class="fas fa-bolt"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-extrabold text-xs text-appText uppercase tracking-wider">Promo Flash Sale</h3>
+                            <p class="text-[9px] text-appMuted">Harga paling miring spesial hari ini</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="overflow-hidden w-full relative">
+                    <div id="promo-marquee-container" class="animate-marquee gap-3 px-4"></div>
+                </div>
+            </div>
+
+            <div class="px-4">
+                <div class="mb-3 flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                        <div class="w-7 h-7 rounded-xl bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center text-indigo-500 text-xs shadow-md">
+                            <i class="fas fa-gamepad"></i>
+                        </div>
+                        <h3 class="font-extrabold text-xs tracking-wider text-appText uppercase">Katalog Top-Up Populer</h3>
+                    </div>
+                </div>
+                <input type="text" id="inputPencarian" onkeyup="renderAllData()" placeholder="Cari game favorit Anda..." class="w-full bg-appInput border border-appBorder rounded-xl px-4 py-3 text-xs text-appText placeholder-appMuted focus:outline-none focus:border-orange-500 mb-4 transition shadow-inner">
+                <div id="all-games-grid" class="grid grid-cols-3 gap-2.5"></div>
+            </div>
+
+            <!-- FOOTER PROFESIONAL -->
+            <footer class="mt-8 border-t border-appBorder bg-appCard/50">
+                <div class="px-5 py-6 space-y-6">
+                    <div class="flex items-center gap-2 text-[11px] text-appMuted">
+                        <i class="fas fa-clock text-orange-500"></i>
+                        <span>Jam Operasional: <b class="text-appText" id="footer-hours">08:00 - 23:00</b></span>
+                    </div>
+
+                    <div>
+                        <h4 class="font-extrabold text-sm text-orange-500 mb-2">Jaminan Transaksi</h4>
+                        <p class="text-[11px] text-appMuted leading-relaxed" id="footer-guarantee">Garansi uang kembali 100% apabila layanan gagal terkirim karena kesalahan sistem.</p>
+                        <p class="text-[11px] text-emerald-500 font-bold mt-2 flex items-center gap-1.5"><i class="fas fa-check-circle"></i> 100% Legal & Aman</p>
+                    </div>
+
+                    <div>
+                        <h4 class="font-extrabold text-sm text-orange-500 mb-2">Peta Situs</h4>
+                        <ul class="space-y-2 text-[12px] text-appText">
+                            <li onclick="window.open('https://wa.me/6282312457432','_blank')" class="cursor-pointer hover:text-orange-500 transition">Hubungi Kami</li>
+                            <li onclick="switchView('cek-id')" class="cursor-pointer hover:text-orange-500 transition">Cek Region Game</li>
+                            <li onclick="switchView('lacak')" class="cursor-pointer hover:text-orange-500 transition">Lacak Pesanan</li>
+                            <li onclick="switchView('spin-coa')" class="cursor-pointer hover:text-orange-500 transition">Event Spin CoA</li>
+                            <li class="cursor-pointer hover:text-orange-500 transition opacity-70">Kebijakan Privasi</li>
+                            <li class="cursor-pointer hover:text-orange-500 transition opacity-70">Syarat & Ketentuan</li>
+                        </ul>
+                    </div>
+
+                    <div>
+                        <h4 class="font-extrabold text-sm text-orange-500 mb-2">Informasi</h4>
+                        <ul class="space-y-2 text-[12px] text-appText">
+                            <li onclick="window.open('https://wa.me/6282312457432','_blank')" class="cursor-pointer hover:text-emerald-500 transition flex items-center gap-2"><i class="fab fa-whatsapp text-emerald-500"></i> WhatsApp CS</li>
+                            <li onclick="window.open('https://t.me/riannn4xbot','_blank')" class="cursor-pointer hover:text-sky-500 transition flex items-center gap-2"><i class="fab fa-telegram text-sky-500"></i> Telegram CS</li>
+                        </ul>
+                    </div>
+
+                    <div>
+                        <h4 class="font-extrabold text-sm text-orange-500 mb-2">Sosial Media</h4>
+                        <p class="text-[11px] text-appMuted mb-3">Hubungi Sosial Media Kami Di Bawah.</p>
+                        <div class="flex gap-3">
+                            <a href="https://wa.me/6282312457432" target="_blank" class="w-10 h-10 rounded-full bg-emerald-500/20 text-emerald-500 flex items-center justify-center border border-emerald-500/30"><i class="fab fa-whatsapp"></i></a>
+                            <a href="https://t.me/riannn4xbot" target="_blank" class="w-10 h-10 rounded-full bg-sky-500/20 text-sky-500 flex items-center justify-center border border-sky-500/30"><i class="fab fa-telegram"></i></a>
+                            <a href="#" class="w-10 h-10 rounded-full bg-pink-500/20 text-pink-500 flex items-center justify-center border border-pink-500/30"><i class="fab fa-instagram"></i></a>
+                            <a href="#" class="w-10 h-10 rounded-full bg-red-500/20 text-red-500 flex items-center justify-center border border-red-500/30"><i class="fab fa-youtube"></i></a>
+                        </div>
+                    </div>
+
+                    <div class="pt-4 border-t border-appBorder text-center">
+                        <p class="text-[10px] text-appMuted" id="footer-copyright">© 2026 V4 TOPUP. All rights reserved.</p>
+                    </div>
+                </div>
+            </footer>
+        </div>
+
+        <!-- LACAK -->
+        <div id="view-lacak" class="app-view px-4 space-y-4">
+            <button onclick="switchView('home')" class="inline-flex items-center gap-2 text-xs font-bold text-appMuted hover:text-orange-500 transition mt-1">
+                <i class="fas fa-arrow-left"></i> Kembali ke Beranda
+            </button>
+            <div class="bg-appCard border border-appBorder rounded-2xl p-4 space-y-3 shadow-xl">
+                <h3 class="font-extrabold text-sm text-appText flex items-center gap-2">
+                    <i class="fas fa-search-location text-orange-500"></i> Lacak Pesanan Real-Time
+                </h3>
+                <p class="text-[10px] text-appMuted">Masukkan ID Transaksi (contoh: TRX-123456) atau Nomor WhatsApp yang digunakan saat checkout.</p>
+                <div class="flex gap-2">
+                    <input type="text" id="search-trx-input" placeholder="Masukkan ID TRX / No WA..." class="w-full bg-appInput border border-appBorder rounded-xl px-3 py-2.5 text-xs text-appText focus:outline-none focus:border-orange-500">
+                    <button onclick="cariPesananTrack()" class="bg-orange-500 hover:bg-orange-600 font-bold px-4 rounded-xl text-xs text-white transition flex items-center gap-1.5 shadow-lg shadow-orange-500/20">
+                        <i class="fas fa-search"></i> Lacak
+                    </button>
+                </div>
+            </div>
+            <div id="lacak-result-container" class="space-y-3"></div>
+        </div>
+
+        <!-- CEK ID -->
+        <div id="view-cek-id" class="app-view px-4 space-y-4">
+            <button onclick="switchView('home')" class="inline-flex items-center gap-2 text-xs font-bold text-appMuted hover:text-orange-500 transition mt-1">
+                <i class="fas fa-arrow-left"></i> Kembali ke Beranda
+            </button>
+            <div class="bg-appCard border border-appBorder rounded-2xl p-5 space-y-4 shadow-xl">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-9 h-9 rounded-xl bg-indigo-500/20 border border-indigo-500/40 flex items-center justify-center text-indigo-500 text-sm">
+                        <i class="fas fa-id-card"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-extrabold text-sm text-appText">Cek Nickname / Region Game</h3>
+                        <p class="text-[10px] text-appMuted">Pastikan ID dan Region game benar sebelum transaksi.</p>
+                    </div>
+                </div>
+
+                <div class="space-y-3 pt-1">
+                    <div>
+                        <label class="block text-[10px] text-appMuted mb-1 font-bold">Pilih Game</label>
+                        <select id="cekid-game-select" class="w-full bg-appInput border border-appBorder rounded-xl px-3 py-2.5 text-xs text-appText focus:outline-none focus:border-orange-500">
+                            <option value="Mobile Legends">Mobile Legends (MLBB)</option>
+                            <option value="Free Fire">Free Fire (FF)</option>
+                            <option value="Wuthering Waves">Wuthering Waves</option>
+                            <option value="Genshin Impact">Genshin Impact</option>
+                        </select>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="block text-[10px] text-appMuted mb-1 font-bold">User ID</label>
+                            <input type="text" id="cekid-userid" placeholder="12345678" class="w-full bg-appInput border border-appBorder rounded-xl px-3 py-2.5 text-xs text-appText focus:outline-none focus:border-orange-500">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] text-appMuted mb-1 font-bold">Region / Zone ID</label>
+                            <input type="text" id="cekid-zoneid" placeholder="2102" class="w-full bg-appInput border border-appBorder rounded-xl px-3 py-2.5 text-xs text-appText focus:outline-none focus:border-orange-500">
+                        </div>
+                    </div>
+                    <button onclick="prosesCekIDGameStandAlone()" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3 rounded-xl text-xs transition shadow-lg shadow-indigo-600/25 flex items-center justify-center gap-2">
+                        <i class="fas fa-check-circle"></i> Verifikasi ID Akun Sekarang
+                    </button>
+                </div>
+
+                <div id="cekid-result-box" class="hidden p-4 bg-appBg border border-indigo-500/30 rounded-xl space-y-1.5 text-xs">
+                    <p class="text-indigo-500 font-bold flex items-center gap-1.5"><i class="fas fa-user-check"></i> Nickname Ditemukan:</p>
+                    <p id="cekid-res-name" class="font-extrabold text-sm text-appText">-</p>
+                    <p id="cekid-res-details" class="text-[10px] text-appMuted">-</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- SETTINGS -->
+        <div id="view-settings" class="app-view px-4 space-y-4">
+            <button onclick="switchView('home')" class="inline-flex items-center gap-2 text-xs font-bold text-appMuted hover:text-orange-500 transition mt-1">
+                <i class="fas fa-arrow-left"></i> Kembali ke Beranda
+            </button>
+            
+            <div class="bg-appCard p-4 rounded-2xl border border-appBorder shadow-lg flex items-center gap-4">
+                <div class="relative">
+                    <img id="setting-avatar" src="https://ui-avatars.com/api/?name=Guest&background=random" class="w-16 h-16 rounded-full object-cover border-2 border-orange-500 shadow-md" alt="avatar">
+                    <button onclick="openModal('editProfileModal')" class="absolute bottom-0 right-0 bg-orange-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-[10px] shadow"><i class="fas fa-camera"></i></button>
+                </div>
+                <div>
+                    <h3 id="setting-name" class="font-bold text-appText text-sm">Tamu Pengunjung</h3>
+                    <p id="setting-email" class="text-[10px] text-appMuted">Silakan login member</p>
+                    <span id="setting-role" class="text-[9px] bg-orange-500/20 text-orange-500 px-2 py-0.5 rounded mt-1.5 inline-block font-bold uppercase tracking-wider">Guest</span>
+                </div>
+            </div>
+
+            <div class="bg-appCard rounded-2xl border border-appBorder shadow-lg overflow-hidden">
+                <div onclick="openModal('editProfileModal')" class="p-4 border-b border-appBorder flex justify-between items-center cursor-pointer hover:bg-black/5 transition">
+                    <div class="flex items-center gap-3 text-appText text-xs font-bold"><div class="w-7 h-7 rounded-lg bg-blue-500/20 text-blue-500 flex items-center justify-center"><i class="fas fa-user-edit"></i></div> Edit Profil Saya</div>
+                    <i class="fas fa-chevron-right text-appMuted text-[10px]"></i>
+                </div>
+                <div onclick="switchView('member-history')" class="p-4 border-b border-appBorder flex justify-between items-center cursor-pointer hover:bg-black/5 transition">
+                    <div class="flex items-center gap-3 text-appText text-xs font-bold"><div class="w-7 h-7 rounded-lg bg-orange-500/20 text-orange-500 flex items-center justify-center"><i class="fas fa-receipt"></i></div> Riwayat Transaksi GoPay Style</div>
+                    <i class="fas fa-chevron-right text-appMuted text-[10px]"></i>
+                </div>
+                <div class="p-4 border-b border-appBorder flex justify-between items-center">
+                    <div class="flex items-center gap-3 text-appText text-xs font-bold"><div class="w-7 h-7 rounded-lg bg-indigo-500/20 text-indigo-500 flex items-center justify-center"><i class="fas fa-moon"></i></div> Mode Gelap</div>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                      <input type="checkbox" id="theme-toggle" class="sr-only peer" onchange="toggleTheme()">
+                      <div class="w-9 h-5 bg-gray-400 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-orange-500"></div>
+                    </label>
+                </div>
+                <div onclick="window.open('https://wa.me/6282312457432', '_blank')" class="p-4 flex justify-between items-center cursor-pointer hover:bg-black/5 transition">
+                    <div class="flex items-center gap-3 text-appText text-xs font-bold"><div class="w-7 h-7 rounded-lg bg-rose-500/20 text-rose-500 flex items-center justify-center"><i class="fas fa-headset"></i></div> Pusat Bantuan (CS)</div>
+                    <i class="fas fa-external-link-alt text-appMuted text-[10px]"></i>
+                </div>
+            </div>
+
+            <button id="setting-logout-btn" onclick="handleLogout()" class="hidden w-full bg-red-500/10 text-red-500 hover:bg-red-500/20 font-bold py-3.5 rounded-xl text-xs border border-red-500/20 transition shadow-sm">
+                <i class="fas fa-sign-out-alt"></i> Keluar Akun Sekarang
+            </button>
+        </div>
+
+        <!-- SPIN COA -->
+        <div id="view-spin-coa" class="app-view px-4 space-y-4">
+            <button onclick="switchView('home')" class="inline-flex items-center gap-2 text-xs font-bold text-appMuted hover:text-orange-500 transition mt-1">
+                <i class="fas fa-arrow-left"></i> Kembali ke Beranda
+            </button>
+            <div class="bg-appCard border border-appBorder rounded-2xl p-5 shadow-2xl flex flex-col items-center text-center space-y-4 relative overflow-hidden">
+                <div class="absolute -top-10 -left-10 w-32 h-32 bg-amber-500/10 rounded-full blur-2xl"></div>
+                <div class="space-y-1">
+                    <span class="bg-amber-500/20 text-amber-500 border border-amber-500/40 text-[9px] font-extrabold px-2.5 py-0.5 rounded-full uppercase">V4 TOPUP EXCLUSIVE SPIN</span>
+                    <h2 class="font-extrabold text-lg text-appText">Lucky Spin Wheel CoA</h2>
+                    <p class="text-[10px] text-appMuted max-w-xs">Capai minimal <strong class="text-amber-500">10x Top-Up Starlight Sukses</strong> untuk membuka kesempatan memenangkan Saldo Uang Tunai Rp 1.000 s/d Rp 10.000!</p>
+                </div>
+                <div class="w-full bg-appBg border border-appBorder rounded-xl p-3 space-y-2 text-left">
+                    <div class="flex justify-between items-center text-[10px]">
+                        <span class="text-appMuted font-bold">Progress Starlight:</span>
+                        <span id="spin-progress-text" class="text-amber-500 font-extrabold">0 / 10 Starlight</span>
+                    </div>
+                    <div class="w-full bg-appBorder h-2 rounded-full overflow-hidden">
+                        <div id="spin-progress-bar" class="bg-gradient-to-r from-amber-500 to-orange-500 h-full w-0 transition-all duration-500"></div>
+                    </div>
+                    <p id="spin-status-note" class="text-[9px] text-red-500 font-semibold"><i class="fas fa-lock"></i> Beli item Starlight 10x terlebih dahulu untuk menyepin!</p>
+                </div>
+                <div class="relative w-64 h-64 my-2 flex items-center justify-center">
+                    <div class="absolute -top-3 z-30 w-0 h-0 border-l-[12px] border-l-transparent border-r-[12px] border-r-transparent border-t-[22px] border-t-amber-500 drop-shadow-md"></div>
+                    <canvas id="wheelCanvas" width="250" height="250" class="rounded-full border-4 border-amber-500/50 shadow-2xl shadow-amber-500/20 bg-appCard"></canvas>
+                </div>
+                <button id="spin-button" onclick="putarWheelCoA()" class="w-full bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 disabled:opacity-40 disabled:cursor-not-allowed text-white font-extrabold py-3.5 rounded-xl text-xs transition shadow-lg shadow-amber-500/30 flex items-center justify-center gap-2">
+                    <i class="fas fa-dharmachakra"></i> PUTAR RODA REZEKI
+                </button>
+            </div>
+        </div>
+
+        <!-- ORDER -->
+        <div id="view-order" class="app-view px-4 space-y-4">
+            <button onclick="switchView('home')" class="inline-flex items-center gap-2 text-xs font-bold text-appMuted hover:text-orange-500 transition mt-1">
+                <i class="fas fa-arrow-left"></i> Kembali ke Beranda
+            </button>
+            <div class="bg-appCard border border-appBorder rounded-2xl p-4 flex items-center gap-4 relative overflow-hidden shadow-lg">
+                <div class="absolute inset-0 bg-gradient-to-r from-orange-500/10 to-transparent pointer-events-none"></div>
+                <img id="order-game-img" src="" class="w-14 h-14 rounded-[14px] object-cover border border-appBorder relative z-10" alt="game">
+                <div class="relative z-10">
+                    <h2 id="order-game-title" class="font-bold text-base text-appText">-</h2>
+                    <p id="order-game-publisher" class="text-[10px] bg-orange-500/20 text-orange-500 border border-orange-500/40 px-2 py-0.5 rounded-md mt-1 w-max font-bold">-</p>
+                </div>
+            </div>
+
+            <form onsubmit="prosesCheckout(event)">
+                <div class="bg-appCard border border-appBorder rounded-2xl p-4 space-y-3 mb-3 shadow-md">
+                    <h3 class="font-bold text-xs text-appText flex items-center gap-2">
+                        <span class="w-5 h-5 rounded-full bg-orange-600 text-white flex items-center justify-center text-[10px]">1</span> 
+                        Masukkan Data Akun Game
+                    </h3>
+                    <div class="grid grid-cols-2 gap-2.5 pt-1">
+                        <input type="text" id="order-userid" placeholder="User ID" required class="w-full bg-appInput border border-appBorder rounded-xl px-3 py-3 text-xs text-appText focus:outline-none focus:border-orange-500">
+                        <input type="text" id="order-zoneid" placeholder="Region / Server ID" class="w-full bg-appInput border border-appBorder rounded-xl px-3 py-3 text-xs text-appText focus:outline-none focus:border-orange-500">
+                        <input type="number" id="order-whatsapp" placeholder="No WhatsApp Aktif" required class="w-full col-span-2 bg-appInput border border-appBorder rounded-xl px-3 py-3 text-xs text-appText focus:outline-none focus:border-orange-500">
+                    </div>
+                    <button type="button" onclick="cekIDGameOrder()" class="w-full bg-appBg hover:bg-black/10 border border-appBorder text-indigo-500 py-2 rounded-xl text-[10px] font-bold flex items-center justify-center gap-1.5 transition">
+                        <i class="fas fa-check-circle"></i> Verifikasi ID Game Ini
+                    </button>
+                    <p id="order-nick-preview" class="text-[10px] text-emerald-500 font-bold hidden bg-emerald-500/10 p-2 rounded-lg border border-emerald-500/20"></p>
+                </div>
+
+                <div class="bg-appCard border border-appBorder rounded-2xl p-4 space-y-3 mb-3 shadow-md">
+                    <h3 class="font-bold text-xs text-appText flex items-center gap-2">
+                        <span class="w-5 h-5 rounded-full bg-orange-600 text-white flex items-center justify-center text-[10px]">2</span> 
+                        Pilih Nominal Item
+                    </h3>
+                    <div id="order-nominal-grid" class="grid grid-cols-2 gap-2.5 pt-1"></div>
+                </div>
+
+                <div class="bg-appCard border border-appBorder rounded-2xl p-4 space-y-3 mb-4 shadow-md">
+                    <h3 class="font-bold text-xs text-appText flex items-center gap-2">
+                        <span class="w-5 h-5 rounded-full bg-orange-600 text-white flex items-center justify-center text-[10px]">3</span> 
+                        Metode Pembayaran & Bukti Transfer
+                    </h3>
+                    <select id="order-payment-method" onchange="tampilkanQrisPembayaran()" class="w-full bg-appInput border border-appBorder rounded-xl px-3 py-3 text-xs text-appText focus:outline-none focus:border-orange-500"></select>
+
+                    <div id="qris-preview-box" class="hidden p-3 bg-appBg border border-orange-500/30 rounded-xl text-center space-y-2">
+                        <p class="text-[10px] text-orange-500 font-bold"><i class="fas fa-qrcode"></i> Scan QRIS di bawah ini</p>
+                        <img id="qris-preview-img" src="" class="qris-preview mx-auto" alt="QRIS">
+                        <p id="qris-preview-desc" class="text-[9px] text-appMuted"></p>
+                    </div>
+
+                    <div class="p-3 bg-appBg border border-appBorder rounded-xl text-[10px] text-appMuted space-y-1">
+                        <p class="text-orange-500 font-bold"><i class="fas fa-info-circle"></i> Instruksi Pembayaran:</p>
+                        <p>Silakan transfer sesuai nominal tertera ke rekening/QRIS terpilih, lalu unggah tangkapan layar (screenshot) bukti pembayaran di bawah ini.</p>
+                    </div>
+
+                    <div>
+                        <label class="block text-[10px] text-appMuted mb-1 font-bold">Upload Bukti Pembayaran</label>
+                        <input type="file" id="order-proof-file" accept="image/*" class="w-full bg-appInput border border-appBorder rounded-xl p-2 text-xs text-appMuted file:mr-3 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-[10px] file:font-bold file:bg-orange-500 file:text-white">
+                        <p class="text-[8px] text-red-500 mt-1 italic">*Wajib diisi kecuali potong saldo member</p>
+                    </div>
+
+                    <div class="flex justify-between items-center text-xs pt-3 mt-2 border-t border-appBorder">
+                        <span class="text-appMuted">Total Pembayaran:</span>
+                        <span id="order-total-price" class="font-bold text-orange-500 text-base">Rp 0</span>
+                    </div>
+
+                    <button type="submit" class="w-full bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-bold py-3.5 rounded-xl text-xs mt-2 transition shadow-lg shadow-orange-500/25 flex items-center justify-center gap-2">
+                        <i class="fas fa-paper-plane"></i> Bayar & Kirim Bukti (Proses Pesanan)
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- KASIR ADMIN -->
+        <div id="view-kasir" class="app-view px-4 space-y-4">
+            <div class="flex items-center justify-between mt-1">
+                <button onclick="switchView('home')" class="inline-flex items-center gap-2 text-xs font-bold text-appMuted hover:text-orange-500 transition">
+                    <i class="fas fa-arrow-left"></i> Kembali
+                </button>
+                <span class="bg-indigo-500/20 text-indigo-500 border border-indigo-500/40 text-[10px] font-bold px-2.5 py-1 rounded-full">LAPORAN KASIR ADMIN</span>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+                <div class="bg-appCard border border-appBorder rounded-2xl p-4 shadow-md">
+                    <div class="flex items-center gap-2 text-emerald-500 mb-1">
+                        <i class="fas fa-wallet text-sm"></i>
+                        <span class="text-[10px] font-bold uppercase tracking-wider text-appMuted">Total Omset</span>
+                    </div>
+                    <h3 id="kasir-total-omset" class="text-base font-extrabold text-emerald-500">Rp 0</h3>
+                </div>
+                <div class="bg-appCard border border-appBorder rounded-2xl p-4 shadow-md">
+                    <div class="flex items-center gap-2 text-orange-500 mb-1">
+                        <i class="fas fa-shopping-cart text-sm"></i>
+                        <span class="text-[10px] font-bold uppercase tracking-wider text-appMuted">Total Transaksi</span>
+                    </div>
+                    <h3 id="kasir-total-trx" class="text-base font-extrabold text-appText">0</h3>
+                </div>
+            </div>
+
+            <div class="bg-appCard border border-appBorder rounded-2xl p-4 space-y-3 shadow-md">
+                <div class="flex items-center justify-between pb-2 border-b border-appBorder">
+                    <h4 class="font-bold text-xs text-appText flex items-center gap-2"><i class="fas fa-history text-orange-500"></i> Kelola Pesanan & Deposit</h4>
+                    <button onclick="resetLaporanKasir()" class="text-[10px] text-red-500 bg-red-500/10 border border-red-500/30 px-2 py-1 rounded-md font-bold hover:bg-red-500/20"><i class="fas fa-trash-alt"></i> Reset</button>
+                </div>
+                <div id="kasir-transaction-list" class="space-y-4 max-h-[65vh] overflow-y-auto pr-1"></div>
+            </div>
+        </div>
+
+        <!-- MEMBER HISTORY -->
+        <div id="view-member-history" class="app-view px-4 space-y-4">
+            <button onclick="switchView('home')" class="inline-flex items-center gap-2 text-xs font-bold text-appMuted hover:text-orange-500 transition mt-1">
+                <i class="fas fa-arrow-left"></i> Kembali ke Beranda
+            </button>
+            <div class="bg-appCard border border-appBorder rounded-2xl p-4 shadow-md space-y-3">
+                <div class="flex justify-between items-center border-b border-appBorder pb-2.5">
+                    <h3 class="font-bold text-xs text-orange-500 flex items-center gap-2"><i class="fas fa-receipt"></i> Riwayat Transaksi GoPay Style</h3>
+                    <span class="text-[9px] text-appMuted">Tersimpan Permanen</span>
+                </div>
+                <div id="gopay-history-list" class="space-y-2.5 max-h-[65vh] overflow-y-auto pr-1"></div>
+            </div>
+        </div>
+
+        <!-- MEMBER WALLET -->
+        <div id="view-member-wallet" class="app-view px-4 space-y-4">
+            <button onclick="switchView('home')" class="inline-flex items-center gap-2 text-xs font-bold text-appMuted hover:text-orange-500 transition mt-1">
+                <i class="fas fa-arrow-left"></i> Kembali ke Beranda
+            </button>
+            <div class="bg-gradient-to-r from-emerald-600 to-teal-500 rounded-2xl p-5 shadow-xl text-white">
+                <span class="text-[10px] uppercase font-bold tracking-wider opacity-80">Saldo Akun Anda Saat Ini</span>
+                <h2 id="member-wallet-balance" class="text-2xl font-extrabold mt-1">Rp 0</h2>
+            </div>
+            <div class="bg-appCard border border-appBorder rounded-2xl p-4 space-y-4 shadow-md">
+                <h3 class="font-bold text-xs text-appText flex items-center gap-2">
+                    <i class="fas fa-plus-circle text-emerald-500"></i> Pengisian / Top-Up Saldo Akun
+                </h3>
+                <form onsubmit="prosesDepositSaldo(event)" class="space-y-3">
+                    <div>
+                        <label class="block text-[10px] text-appMuted mb-1 font-bold">Pilih Nominal Deposit</label>
+                        <select id="deposit-amount-select" required class="w-full bg-appInput border border-appBorder rounded-xl px-3 py-3 text-xs text-appText focus:outline-none focus:border-emerald-500">
+                            <option value="10000">Rp 10.000</option>
+                            <option value="25000">Rp 25.000</option>
+                            <option value="50000" selected>Rp 50.000</option>
+                            <option value="100000">Rp 100.000</option>
+                            <option value="250000">Rp 250.000</option>
+                            <option value="500000">Rp 500.000</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-[10px] text-appMuted mb-1 font-bold">Nomor WhatsApp Aktif</label>
+                        <input type="number" id="deposit-whatsapp" placeholder="Cth: 0812345678" required class="w-full bg-appInput border border-appBorder rounded-xl px-3 py-3 text-xs text-appText focus:outline-none focus:border-emerald-500">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] text-appMuted mb-1 font-bold">Metode Pembayaran Transfer</label>
+                        <select id="deposit-payment-method" class="w-full bg-appInput border border-appBorder rounded-xl px-3 py-3 text-xs text-appText focus:outline-none focus:border-emerald-500"></select>
+                    </div>
+                    <div class="p-3 bg-appBg border border-appBorder rounded-xl text-[10px] text-appMuted space-y-1">
+                        <p class="text-emerald-500 font-bold"><i class="fas fa-info-circle"></i> Catatan Konfirmasi Deposit:</p>
+                        <p>Setelah transfer, upload foto bukti transfer Anda. Admin V4 TOPUP akan memverifikasi dan menambahkan saldo ke akun Anda secara cepat.</p>
+                    </div>
+                    <div>
+                        <label class="block text-[10px] text-appMuted mb-1 font-bold">Upload Bukti Transfer Deposit</label>
+                        <input type="file" id="deposit-proof-file" accept="image/*" required class="w-full bg-appInput border border-appBorder rounded-xl p-2 text-xs text-appMuted file:mr-3 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-[10px] file:font-bold file:bg-emerald-500 file:text-white">
+                    </div>
+                    <button type="submit" class="w-full bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white font-bold py-3.5 rounded-xl text-xs transition shadow-lg shadow-emerald-500/25 flex items-center justify-center gap-2">
+                        <i class="fas fa-paper-plane"></i> Kirim Permintaan Deposit (Konfirmasi Admin)
+                    </button>
+                </form>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Toast -->
+    <div id="toast" class="toast"></div>
+
+    <!-- PROMO POPUP (gambar dari admin) -->
+    <div id="promoPopupModal" class="fixed inset-0 bg-black/85 z-[70] hidden flex items-center justify-center p-4">
+        <div class="relative w-full max-w-sm success-modal-content">
+            <button onclick="closePromoPopup(false)" class="absolute -top-2 -right-2 z-20 w-9 h-9 bg-red-500 text-white rounded-full shadow-lg flex items-center justify-center"><i class="fas fa-times text-sm"></i></button>
+            <div class="bg-appCard rounded-2xl overflow-hidden border border-appBorder shadow-2xl">
+                <img id="promo-popup-img" src="" alt="Promo" class="w-full h-auto object-contain bg-black/40 max-h-[55vh]">
+                <div class="p-4 space-y-3 text-center">
+                    <h3 id="promo-popup-title" class="font-extrabold text-sm text-appText">Promo Spesial</h3>
+                    <p id="promo-popup-desc" class="text-[11px] text-appMuted leading-relaxed"></p>
+                    <div id="promo-popup-contacts" class="flex flex-col gap-2"></div>
+                    <label class="flex items-center justify-center gap-2 text-[10px] text-appMuted cursor-pointer pt-1">
+                        <input type="checkbox" id="promo-dont-show" class="rounded accent-orange-500">
+                        Jangan tampilkan lagi
+                    </label>
+                    <button onclick="closePromoPopup(true)" class="w-full bg-gradient-to-r from-orange-500 to-amber-500 text-white font-bold py-2.5 rounded-xl text-xs">Tutup</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Professional Success/Info Modal (ganti alert jelek) -->
+    <div id="successModal" class="fixed inset-0 bg-black/80 z-[60] hidden flex items-center justify-center p-4">
+        <div class="success-modal-content bg-appCard w-full max-w-xs rounded-2xl p-6 relative border border-appBorder shadow-2xl text-center space-y-4">
+            <div id="success-modal-icon" class="w-16 h-16 mx-auto rounded-full bg-emerald-500/20 flex items-center justify-center">
+                <i class="fas fa-check-circle text-emerald-500 text-3xl"></i>
+            </div>
+            <div>
+                <h3 id="success-modal-title" class="font-extrabold text-base text-appText">Berhasil!</h3>
+                <p id="success-modal-msg" class="text-xs text-appMuted mt-2 leading-relaxed"></p>
+                <p id="success-modal-id" class="text-[11px] font-bold text-orange-500 mt-2 hidden"></p>
+            </div>
+            <button onclick="closeModal('successModal')" class="w-full bg-gradient-to-r from-orange-500 to-amber-500 text-white font-bold py-3 rounded-xl text-xs shadow-lg shadow-orange-500/25">
+                Mengerti
+            </button>
+        </div>
+    </div>
+
+    <!-- MENU MODAL -->
+    <div id="menuModal" class="fixed inset-0 bg-black/80 z-50 hidden flex items-center justify-end p-4 transition-opacity">
+        <div class="bg-appCard w-72 h-full rounded-2xl p-6 relative border border-appBorder overflow-y-auto shadow-2xl flex flex-col justify-between">
+            <div>
+                <button onclick="closeModal('menuModal')" class="absolute top-4 right-4 w-8 h-8 bg-appBg rounded-full text-appText flex items-center justify-center"><i class="fas fa-times text-xs"></i></button>
+                <div class="mt-6 border-b border-appBorder pb-4 mb-4 flex items-center gap-3">
+                    <img id="nav-modal-avatar" src="https://ui-avatars.com/api/?name=Guest&background=random" class="w-10 h-10 rounded-full object-cover shadow-lg border border-orange-500/20" alt="avatar">
+                    <div>
+                        <h3 id="menu-user-name" class="font-bold text-xs text-appText truncate w-32">Tamu Pengunjung</h3>
+                        <p id="menu-user-role" class="text-[9px] text-orange-500 font-semibold">Belum Masuk</p>
+                    </div>
+                </div>
+                <ul class="space-y-1.5 text-xs text-appMuted">
+                    <li onclick="switchView('home'); closeModal('menuModal')" class="flex items-center gap-3 cursor-pointer hover:bg-black/5 p-2.5 rounded-xl transition"><i class="fas fa-home w-5 text-center text-orange-500"></i> Beranda Utama</li>
+                    <li onclick="switchView('lacak'); closeModal('menuModal')" class="flex items-center gap-3 cursor-pointer hover:bg-black/5 p-2.5 rounded-xl transition"><i class="fas fa-search-location w-5 text-center text-emerald-500"></i> Lacak Pesanan</li>
+                    <li onclick="switchView('cek-id'); closeModal('menuModal')" class="flex items-center gap-3 cursor-pointer hover:bg-black/5 p-2.5 rounded-xl transition"><i class="fas fa-id-card w-5 text-center text-indigo-500"></i> Cek Region</li>
+                    <li onclick="switchView('spin-coa'); closeModal('menuModal')" class="flex items-center gap-3 cursor-pointer hover:bg-black/5 p-2.5 rounded-xl transition"><i class="fas fa-dharmachakra w-5 text-center text-amber-500"></i> Spin CoA Wheel</li>
+                    
+                    <div id="member-menu-items" class="hidden space-y-1.5 pt-1">
+                        <li onclick="switchView('member-wallet'); closeModal('menuModal')" class="flex items-center gap-3 cursor-pointer hover:bg-black/5 p-2.5 rounded-xl transition"><i class="fas fa-wallet w-5 text-center text-emerald-500"></i> Saldo & Top-Up</li>
+                        <li onclick="switchView('member-history'); closeModal('menuModal')" class="flex items-center gap-3 cursor-pointer hover:bg-black/5 p-2.5 rounded-xl transition"><i class="fas fa-receipt w-5 text-center text-blue-500"></i> Riwayat GoPay Style</li>
+                        <li onclick="switchView('settings'); closeModal('menuModal')" class="flex items-center gap-3 cursor-pointer hover:bg-black/5 p-2.5 rounded-xl transition"><i class="fas fa-cog w-5 text-center text-gray-500"></i> Pengaturan Akun</li>
+                    </div>
+                    
+                    <div class="pt-2 border-t border-appBorder space-y-1.5">
+                        <li onclick="window.open('https://t.me/riannn4xbot', '_blank')" class="flex items-center gap-3 cursor-pointer hover:bg-black/5 p-2.5 rounded-xl transition"><i class="fab fa-telegram w-5 text-center text-sky-500"></i> Telegram CS </li>
+                        <li onclick="window.open('https://wa.me/6282312457432', '_blank')" class="flex items-center gap-3 cursor-pointer hover:bg-black/5 p-2.5 rounded-xl transition"><i class="fab fa-whatsapp w-5 text-center text-emerald-500"></i> Live Chat WhatsApp</li>
+                    </div>
+                    
+                    <div id="admin-menu-area" class="mt-3 pt-3 border-t border-appBorder space-y-1.5"></div>
+                </ul>
+            </div>
+            <div id="auth-button-area" class="pt-4 border-t border-appBorder">
+                <button onclick="closeModal('menuModal'); openModal('authModal')" class="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 rounded-xl text-xs transition shadow-lg shadow-orange-500/20">Login / Daftar Member</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- AUTH MODAL -->
+    <div id="authModal" class="fixed inset-0 bg-black/80 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-appCard w-full max-w-sm rounded-2xl p-6 relative border border-appBorder shadow-2xl">
+            <button onclick="closeModal('authModal')" class="absolute top-4 right-4 text-appMuted hover:text-appText"><i class="fas fa-times text-xs"></i></button>
+            <h3 class="font-bold mb-4 text-orange-500 flex items-center gap-2 text-sm"><i class="fas fa-user-lock"></i> Autentikasi Sistem</h3>
+            <div class="flex bg-appBg p-1 rounded-xl mb-4 border border-appBorder text-xs font-bold text-center">
+                <button onclick="switchAuthTab('login')" id="tab-btn-login" class="w-1/2 py-2 rounded-lg bg-orange-500 text-white transition shadow-md">Masuk</button>
+                <button onclick="switchAuthTab('register')" id="tab-btn-register" class="w-1/2 py-2 rounded-lg text-appMuted transition">Daftar</button>
+            </div>
+            <form id="auth-form" onsubmit="handleAuthSubmit(event)" class="space-y-3">
+                <input type="text" id="auth-username" placeholder="Username" required class="w-full bg-appInput border border-appBorder rounded-xl px-4 py-3 text-xs text-appText focus:outline-none focus:border-orange-500">
+                <div id="auth-register-fields" class="hidden space-y-3">
+                    <input type="email" id="auth-email" placeholder="Alamat Email Aktif" class="w-full bg-appInput border border-appBorder rounded-xl px-4 py-3 text-xs text-appText focus:outline-none focus:border-orange-500">
+                    <input type="number" id="auth-wa" placeholder="Nomor WhatsApp (Cth: 0812...)" class="w-full bg-appInput border border-appBorder rounded-xl px-4 py-3 text-xs text-appText focus:outline-none focus:border-orange-500">
+                </div>
+                <input type="password" id="auth-password" placeholder="Password" required class="w-full bg-appInput border border-appBorder rounded-xl px-4 py-3 text-xs text-appText focus:outline-none focus:border-orange-500">
+                <button type="submit" id="auth-submit-btn" class="w-full bg-orange-500 text-white font-bold py-3 rounded-xl text-xs mt-2 transition shadow-lg shadow-orange-500/20">Masuk Sekarang</button>
+            </form>
+            <p class="text-[9px] text-appMuted mt-3 text-center">Admin demo: <b>admin</b> / <b>admin123</b></p>
+        </div>
+    </div>
+
+    <!-- EDIT PROFILE -->
+    <div id="editProfileModal" class="fixed inset-0 bg-black/80 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-appCard w-full max-w-xs rounded-2xl p-6 relative border border-appBorder shadow-2xl">
+            <button onclick="closeModal('editProfileModal')" class="absolute top-4 right-4 text-appMuted hover:text-appText"><i class="fas fa-times text-xs"></i></button>
+            <h3 class="font-bold mb-4 text-appText flex items-center gap-2 text-sm"><i class="fas fa-user-edit text-blue-500"></i> Edit Profil & Foto</h3>
+            <div class="space-y-4">
+                <div class="text-center">
+                    <img id="preview-edit-avatar" src="https://ui-avatars.com/api/?name=Guest" class="w-20 h-20 rounded-full mx-auto object-cover border-2 border-orange-500 shadow-md mb-2" alt="preview">
+                    <input type="file" id="input-edit-avatar" accept="image/*" class="w-full text-[10px] text-appMuted file:bg-appInput file:border file:border-appBorder file:rounded-lg file:px-3 file:py-1 file:text-appText file:mr-2">
+                </div>
+                <div>
+                    <label class="block text-[10px] text-appMuted mb-1 font-bold">Nama / Username Baru</label>
+                    <input type="text" id="input-edit-name" placeholder="Nama Anda" required class="w-full bg-appInput border border-appBorder rounded-xl px-4 py-3 text-xs text-appText focus:outline-none focus:border-orange-500">
+                </div>
+                <button onclick="simpanEditProfil()" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 rounded-xl text-xs transition shadow-lg shadow-blue-500/20">Simpan Perubahan</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- IMAGE LIGHTBOX -->
+    <div id="imageLightboxModal" class="fixed inset-0 bg-black/90 z-50 hidden flex flex-col items-center justify-center p-4">
+        <button onclick="closeModal('imageLightboxModal')" class="absolute top-4 right-4 text-white bg-red-600 hover:bg-red-700 w-10 h-10 rounded-full text-sm font-bold flex items-center justify-center shadow-lg"><i class="fas fa-times"></i></button>
+        <p class="text-white text-xs font-bold mb-2">Pratinjau Bukti Pembayaran (Full Size)</p>
+        <img id="lightbox-img-src" src="" class="max-w-full max-h-[80vh] object-contain rounded-xl border-2 border-appBorder shadow-2xl" alt="bukti">
+    </div>
+
+    <!-- ADMIN BRANDING -->
+    <div id="adminBrandingModal" class="fixed inset-0 bg-black/80 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-appCard w-full max-w-sm rounded-2xl p-5 relative border border-appBorder shadow-2xl space-y-4">
+            <button onclick="closeModal('adminBrandingModal')" class="absolute top-4 right-4 text-white bg-red-500/20 px-3 py-1.5 rounded-lg text-xs font-bold"><i class="fas fa-times"></i> Tutup</button>
+            <h3 class="font-bold text-orange-500 flex items-center gap-2 text-sm"><i class="fas fa-store"></i> Kelola Nama & Logo Store</h3>
+            <div class="space-y-3">
+                <div>
+                    <label class="block text-[10px] text-appMuted mb-1 font-bold">Nama Toko / Store</label>
+                    <input type="text" id="admin-store-name-input" placeholder="Cth: V4 TOPUP" class="w-full bg-appInput border border-appBorder rounded-xl px-3 py-2.5 text-xs text-appText focus:outline-none focus:border-orange-500">
+                </div>
+                <div>
+                    <label class="block text-[10px] text-appMuted mb-1 font-bold">Upload Logo Toko (Gambar / Icon)</label>
+                    <input type="file" id="admin-store-logo-file" accept="image/*" class="w-full bg-appInput border border-appBorder rounded-xl p-2 text-xs text-appMuted">
+                </div>
+                <button onclick="simpanStoreBranding()" class="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 rounded-xl text-xs transition shadow-lg shadow-orange-500/20">Simpan Identitas Store</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ADMIN POPUP PROMO -->
+    <div id="adminPopupModal" class="fixed inset-0 bg-black/80 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-appCard w-full max-w-sm rounded-2xl p-5 relative border border-appBorder shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
+            <button onclick="closeModal('adminPopupModal')" class="absolute top-4 right-4 text-white bg-red-500/20 px-3 py-1.5 rounded-lg text-xs font-bold"><i class="fas fa-times"></i> Tutup</button>
+            <h3 class="font-bold text-orange-500 flex items-center gap-2 text-sm"><i class="fas fa-bullhorn"></i> Popup Promo Saat Masuk</h3>
+            <p class="text-[10px] text-appMuted">Popup ini muncul otomatis saat pengguna membuka website. Upload gambar sesuai ukuran yang kamu mau — akan ditampilkan apa adanya.</p>
+            <div class="space-y-3">
+                <div>
+                    <label class="block text-[10px] text-appMuted mb-1 font-bold">Aktifkan Popup</label>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" id="popup-enabled" class="sr-only peer" checked>
+                        <div class="w-9 h-5 bg-gray-400 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-orange-500"></div>
+                        <span class="ml-2 text-[10px] text-appMuted">Tampilkan ke semua pengunjung</span>
+                    </label>
+                </div>
+                <div>
+                    <label class="block text-[10px] text-appMuted mb-1 font-bold">Judul Popup</label>
+                    <input type="text" id="popup-title" placeholder="Promo Spesial" class="w-full bg-appInput border border-appBorder rounded-xl px-3 py-2.5 text-xs text-appText focus:outline-none focus:border-orange-500">
+                </div>
+                <div>
+                    <label class="block text-[10px] text-appMuted mb-1 font-bold">Deskripsi singkat</label>
+                    <textarea id="popup-desc" rows="2" placeholder="Tulis deskripsi promo..." class="w-full bg-appInput border border-appBorder rounded-xl px-3 py-2.5 text-xs text-appText focus:outline-none focus:border-orange-500"></textarea>
+                </div>
+                <div>
+                    <label class="block text-[10px] text-appMuted mb-1 font-bold">Upload Gambar Popup</label>
+                    <input type="file" id="popup-img-file" accept="image/*" class="w-full bg-appInput border border-appBorder rounded-xl p-2 text-xs text-appMuted">
+                    <img id="popup-img-preview" src="" class="hidden mt-2 w-full rounded-xl border border-appBorder object-contain max-h-48">
+                    <input type="hidden" id="popup-img-data">
+                </div>
+                <div>
+                    <label class="block text-[10px] text-appMuted mb-1 font-bold">Tombol Kontak 1 (opsional)</label>
+                    <div class="grid grid-cols-2 gap-2">
+                        <input type="text" id="popup-btn1-label" placeholder="ADMIN JUAL" class="bg-appInput border border-appBorder rounded-xl px-3 py-2 text-xs text-appText">
+                        <input type="text" id="popup-btn1-link" placeholder="https://wa.me/62..." class="bg-appInput border border-appBorder rounded-xl px-3 py-2 text-xs text-appText">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-[10px] text-appMuted mb-1 font-bold">Tombol Kontak 2 (opsional)</label>
+                    <div class="grid grid-cols-2 gap-2">
+                        <input type="text" id="popup-btn2-label" placeholder="ADMIN BELI" class="bg-appInput border border-appBorder rounded-xl px-3 py-2 text-xs text-appText">
+                        <input type="text" id="popup-btn2-link" placeholder="https://wa.me/62..." class="bg-appInput border border-appBorder rounded-xl px-3 py-2 text-xs text-appText">
+                    </div>
+                </div>
+                <button onclick="simpanPromoPopup()" class="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 rounded-xl text-xs transition shadow-lg shadow-orange-500/20">Simpan Popup Promo</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ADMIN PAYMENT -->
+    <div id="adminPaymentModal" class="fixed inset-0 bg-black/80 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-appCard w-full max-w-md rounded-2xl p-5 relative border border-appBorder max-h-[90vh] overflow-y-auto shadow-2xl">
+            <button onclick="closeModal('adminPaymentModal')" class="absolute top-4 right-4 text-white bg-red-500/20 px-3 py-1.5 rounded-lg text-xs font-bold"><i class="fas fa-times"></i> Tutup</button>
+            <h3 class="font-bold mb-4 text-orange-500 flex items-center gap-2 text-sm"><i class="fas fa-credit-card"></i> Kelola Metode Pembayaran (QRIS / Bank)</h3>
+            <div id="admin-payment-list" class="space-y-3 mb-4"></div>
+            <button type="button" onclick="tambahSlotPaymentAdmin()" class="w-full border border-dashed border-orange-500/50 hover:bg-orange-500/10 transition text-orange-500 py-2.5 rounded-xl text-xs font-bold mb-4">+ Tambah Metode Pembayaran</button>
+            <button type="button" onclick="simpanMasterPayments()" class="w-full bg-orange-500 hover:bg-orange-400 text-white font-bold py-3.5 rounded-xl text-xs transition shadow-lg shadow-orange-500/20">Simpan Metode Pembayaran</button>
+        </div>
+    </div>
+
+    <!-- ADMIN BANNER -->
+    <div id="adminBannerModal" class="fixed inset-0 bg-black/80 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-appCard w-full max-w-md rounded-2xl p-5 relative border border-appBorder max-h-[90vh] overflow-y-auto shadow-2xl">
+            <button onclick="closeModal('adminBannerModal')" class="absolute top-4 right-4 text-white bg-red-500/20 px-3 py-1.5 rounded-lg text-xs font-bold"><i class="fas fa-times"></i> Tutup</button>
+            <h3 class="font-bold mb-2 text-orange-500 flex items-center gap-2 text-sm"><i class="fas fa-images"></i> Kelola Banner Utama</h3>
+            <p class="text-[10px] text-appMuted mb-4">Upload gambar dari galeri HP. Preview langsung muncul. Tidak perlu URL.</p>
+            <div id="admin-banner-list" class="space-y-3.5 mb-4"></div>
+            <button type="button" onclick="tambahSlotBannerAdmin()" class="w-full border border-dashed border-orange-500/50 hover:bg-orange-500/10 transition text-orange-500 py-2.5 rounded-xl text-xs font-bold mb-4">+ Tambah Banner Baru</button>
+            <button type="button" onclick="simpanBannerMaster()" class="w-full bg-orange-500 hover:bg-orange-400 text-white font-bold py-3.5 rounded-xl text-xs transition shadow-lg shadow-orange-500/20">Simpan Perubahan Banner</button>
+        </div>
+    </div>
+
+    <!-- ADMIN PROMO FLASH SALE -->
+    <div id="adminPromoModal" class="fixed inset-0 bg-black/80 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-appCard w-full max-w-md rounded-2xl p-5 relative border border-appBorder max-h-[90vh] overflow-y-auto shadow-2xl">
+            <button onclick="closeModal('adminPromoModal')" class="absolute top-4 right-4 text-white bg-red-500/20 px-3 py-1.5 rounded-lg text-xs font-bold"><i class="fas fa-times"></i> Tutup</button>
+            <h3 class="font-bold mb-2 text-orange-500 flex items-center gap-2 text-sm"><i class="fas fa-bolt"></i> Kelola Promo Flash Sale</h3>
+            <p class="text-[10px] text-appMuted mb-4">Item yang tampil di marquee "Promo Flash Sale" di beranda. Bisa tambah, edit, hapus, dan upload gambar.</p>
+            <div id="admin-promo-list" class="space-y-3.5 mb-4"></div>
+            <button type="button" onclick="tambahSlotPromoAdmin()" class="w-full border border-dashed border-orange-500/50 hover:bg-orange-500/10 transition text-orange-500 py-2.5 rounded-xl text-xs font-bold mb-4">+ Tambah Promo</button>
+            <button type="button" onclick="simpanPromoMaster()" class="w-full bg-orange-500 hover:bg-orange-400 text-white font-bold py-3.5 rounded-xl text-xs transition shadow-lg shadow-orange-500/20">Simpan Flash Sale</button>
+        </div>
+    </div>
+
+    <!-- ADMIN GAME -->
+    <div id="adminGameModal" class="fixed inset-0 bg-black/80 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-appCard w-full max-w-md rounded-2xl p-5 relative border border-appBorder max-h-[90vh] overflow-y-auto shadow-2xl">
+            <button onclick="closeModal('adminGameModal')" class="absolute top-4 right-4 text-white bg-red-500/20 px-3 py-1.5 rounded-lg text-xs font-bold"><i class="fas fa-times"></i> Tutup</button>
+            <h3 class="font-bold mb-4 text-orange-500 flex items-center gap-2 text-sm" id="gameModalTitle"><i class="fas fa-gamepad"></i> Kelola Game</h3>
+            <form onsubmit="event.preventDefault(); simpanGame();" class="space-y-3.5">
+                <input type="hidden" id="gameId">
+                <input type="hidden" id="gameOldImg">
+                <div><label class="block text-[10px] text-appMuted mb-1">Nama Game</label><input type="text" id="gameTitle" required class="w-full bg-appInput border border-appBorder rounded-xl px-3 py-3 text-xs text-appText focus:outline-none focus:border-orange-500"></div>
+                <div><label class="block text-[10px] text-appMuted mb-1">Badge Teks (Cth: VIA UID)</label><input type="text" id="gameBadge" required class="w-full bg-appInput border border-appBorder rounded-xl px-3 py-3 text-xs text-appText uppercase focus:outline-none focus:border-orange-500"></div>
+                <div><label class="block text-[10px] text-appMuted mb-1">Upload Gambar Game</label><input type="file" id="gameImg" accept="image/*" class="w-full bg-appInput border border-appBorder rounded-xl p-2 text-xs text-appMuted file:mr-4 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-[10px] file:font-bold file:bg-orange-500 file:text-white"></div>
+                <div class="p-3 border border-appBorder rounded-xl bg-appBg mt-2">
+                    <label class="block text-[10px] text-orange-500 font-bold mb-2 flex items-center gap-1.5"><i class="fas fa-list"></i> Daftar Item & Harga</label>
+                    <div id="dynamic-items-container" class="space-y-2"></div>
+                    <button type="button" onclick="addAdminItemRow('', '')" class="w-full border border-dashed border-orange-500/50 hover:bg-orange-500/10 transition text-orange-500 py-2 rounded-lg text-[10px] font-bold mt-2">+ Tambah Slot Item</button>
+                </div>
+                <button type="submit" class="w-full bg-orange-500 hover:bg-orange-400 transition text-white font-bold py-3.5 rounded-xl text-xs mt-3 shadow-lg shadow-orange-500/20">Simpan Perubahan Game</button>
+            </form>
+        </div>
+    </div>
+
+<script>
+/* ===================== CORE HELPERS ===================== */
+function convertFileToBase64(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = error => reject(error);
+        reader.readAsDataURL(file);
+    });
+}
+
+function showToast(msg, duration = 2800) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), duration);
+}
+
+function showSuccessModal(title, message, idText = '') {
+    document.getElementById('success-modal-title').textContent = title;
+    document.getElementById('success-modal-msg').textContent = message;
+    const idEl = document.getElementById('success-modal-id');
+    if (idText) {
+        idEl.textContent = idText;
+        idEl.classList.remove('hidden');
+    } else {
+        idEl.classList.add('hidden');
+    }
+    document.getElementById('success-modal-icon').innerHTML = '<i class="fas fa-check-circle text-emerald-500 text-3xl"></i>';
+    openModal('successModal');
+}
+
+function showErrorModal(title, message) {
+    document.getElementById('success-modal-title').textContent = title;
+    document.getElementById('success-modal-msg').textContent = message;
+    document.getElementById('success-modal-id').classList.add('hidden');
+    document.getElementById('success-modal-icon').innerHTML = '<i class="fas fa-times-circle text-red-500 text-3xl"></i>';
+    openModal('successModal');
+}
+
+function playNotifSound() {
+    try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.frequency.value = 880;
+        osc.type = 'sine';
+        gain.gain.setValueAtTime(0.3, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.4);
+        osc.start(ctx.currentTime);
+        osc.stop(ctx.currentTime + 0.4);
+        setTimeout(() => {
+            const osc2 = ctx.createOscillator();
+            const gain2 = ctx.createGain();
+            osc2.connect(gain2);
+            gain2.connect(ctx.destination);
+            osc2.frequency.value = 1175;
+            osc2.type = 'sine';
+            gain2.gain.setValueAtTime(0.25, ctx.currentTime);
+            gain2.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.35);
+            osc2.start(ctx.currentTime);
+            osc2.stop(ctx.currentTime + 0.35);
+        }, 180);
+    } catch (e) {}
+}
+
+function showAdminNotif(text) {
+    const bar = document.getElementById('admin-notif-bar');
+    document.getElementById('admin-notif-text').textContent = text || 'Ada transaksi baru menunggu konfirmasi!';
+    bar.classList.add('show');
+    playNotifSound();
+}
+
+function hideAdminNotif() {
+    document.getElementById('admin-notif-bar').classList.remove('show');
+}
+
+function openModal(id) {
+    document.getElementById(id).classList.remove('hidden');
+    if (id === 'adminPaymentModal') renderAdminPayments();
+    if (id === 'adminBannerModal') renderAdminBanners();
+    if (id === 'adminPromoModal') renderAdminPromos();
+    if (id === 'adminBrandingModal') {
+        const b = JSON.parse(localStorage.getItem(dbStoreBrandingKey)) || { name: 'V4 TOPUP', logo: '' };
+        document.getElementById('admin-store-name-input').value = b.name;
+    }
+}
+
+function closeModal(id) {
+    document.getElementById(id).classList.add('hidden');
+}
+
+function formatRp(num) {
+    return 'Rp ' + Number(num).toLocaleString('id-ID');
+}
+
+function parsePrice(str) {
+    if (!str) return 0;
+    return parseInt(String(str).replace(/[^\d]/g, ''), 10) || 0;
+}
+
+/* ===================== STORAGE KEYS ===================== */
+const dbGamesKey = 's88_games_v10';
+const dbBannerKey = 's88_banner_v10';
+const dbPromoKey = 's88_promo_v10';
+const dbTransKey = 's88_transactions_v10';
+const dbUsersKey = 's88_users_v10';
+const dbCurrentSessionKey = 's88_session_v10';
+const dbNotifKey = 's88_new_notif_v10';
+const dbStoreBrandingKey = 's88_branding_v10';
+const dbPaymentsKey = 's88_payments_v10';
+const dbSpinKey = 's88_spin_progress_v10';
+const dbPopupKey = 's88_promo_popup_v10';
+const dbPopupHideKey = 's88_promo_popup_hide';
+
+let currentBannerIndex = 0;
+let bannerInterval = null;
+let authMode = 'login';
+let selectedOrderItem = null;
+let currentOrderGameId = null;
+let isSpinning = false;
+
+/* ===================== THEME ===================== */
+function initTheme() {
+    let savedTheme = localStorage.getItem('s88_theme') || 'dark';
+    document.documentElement.setAttribute('data-theme', savedTheme);
+    let toggle = document.getElementById('theme-toggle');
+    if (toggle) toggle.checked = (savedTheme === 'dark');
+}
+function toggleTheme() {
+    let current = document.documentElement.getAttribute('data-theme');
+    let newTheme = current === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', newTheme);
+    localStorage.setItem('s88_theme', newTheme);
+}
+initTheme();
+
+/* ===================== DEFAULT DATA ===================== */
+const defaultGames = [
+    { id: 'mlbb', title: 'Mobile Legends', badge: 'VIA UID', img: 'https://images.unsplash.com/photo-1624138784614-87fd1b6528f8?q=80&w=400&auto=format&fit=crop', items: [
+        { name: 'Weekly Diamond Pass', price: 'Rp 27.768' },
+        { name: '86 Diamonds', price: 'Rp 19.500' },
+        { name: 'Starlight Member', price: 'Rp 28.000' },
+        { name: '257 Diamonds', price: 'Rp 57.000' }
+    ]},
+    { id: 'ww', title: 'Wuthering Waves', badge: 'VIA UID', img: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=400&auto=format&fit=crop', items: [
+        { name: 'Lunite Subscription', price: 'Rp 70.000' },
+        { name: '300 Lunites', price: 'Rp 75.000' }
+    ]},
+    { id: 'ff', title: 'Free Fire', badge: 'VIA UID', img: 'https://images.unsplash.com/photo-1538481199705-c710c4e965fc?q=80&w=400&auto=format&fit=crop', items: [
+        { name: 'Membership Mingguan', price: 'Rp 26.435' },
+        { name: '720 Diamonds', price: 'Rp 65.500' }
+    ]}
+];
+
+const defaultBanners = [
+    { badge: '#TOPUP AMAN GAMING NYAMAN', title: 'TOPUP HEMAT - WAIFU PULANG LEBIH CEPAT - DISC UP TO 11%', img: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=800&auto=format&fit=crop' },
+    { badge: 'FLASH SALE PROMO', title: 'WEEKLY PASS TERMURAH & TERCEPAT SE-INDONESIA', img: 'https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=800&auto=format&fit=crop' }
+];
+
+const defaultPromos = [
+    { title: 'Weekly Diamond Pass', game: 'Mobile Legends', price: 'Rp 27.768', img: 'https://images.unsplash.com/photo-1624138784614-87fd1b6528f8?q=80&w=300&auto=format&fit=crop' },
+    { title: 'Membership Mingguan', game: 'Free Fire', price: 'Rp 26.435', img: 'https://images.unsplash.com/photo-1538481199705-c710c4e965fc?q=80&w=300&auto=format&fit=crop' }
+];
+
+const defaultPayments = [
+    { name: 'QRIS (Instant)', desc: 'Scan Bebas Biaya Admin', qrisImg: '' },
+    { name: 'BCA Transfer', desc: '1234567890 a.n V4 TOPUP', qrisImg: '' },
+    { name: 'DANA Wallet', desc: '081234567890 a.n V4 TOPUP', qrisImg: '' },
+    { name: 'Saldo Member', desc: 'Potong Saldo Akun Member', qrisImg: '' }
+];
+
+/* Seed defaults */
+if (!localStorage.getItem(dbGamesKey)) localStorage.setItem(dbGamesKey, JSON.stringify(defaultGames));
+if (!localStorage.getItem(dbBannerKey)) localStorage.setItem(dbBannerKey, JSON.stringify(defaultBanners));
+if (!localStorage.getItem(dbPromoKey)) localStorage.setItem(dbPromoKey, JSON.stringify(defaultPromos));
+if (!localStorage.getItem(dbTransKey)) localStorage.setItem(dbTransKey, JSON.stringify([]));
+if (!localStorage.getItem(dbUsersKey)) {
+    // Default admin account
+    localStorage.setItem(dbUsersKey, JSON.stringify([{
+        username: 'admin',
+        password: 'admin123',
+        email: 'admin@v4topup.com',
+        wa: '6282312457432',
+        role: 'admin',
+        balance: 0,
+        avatar: '',
+        starlightCount: 0
+    }]));
+}
+if (!localStorage.getItem(dbNotifKey)) localStorage.setItem(dbNotifKey, 'false');
+if (!localStorage.getItem(dbStoreBrandingKey)) {
+    localStorage.setItem(dbStoreBrandingKey, JSON.stringify({ name: 'V4 TOPUP', logo: '' }));
+} else {
+    // Migrasi nama lama STORE88 → V4 TOPUP (sekali)
+    try {
+        const b = JSON.parse(localStorage.getItem(dbStoreBrandingKey));
+        if (b && (b.name === 'STORE88' || b.name === 'STORE 88')) {
+            b.name = 'V4 TOPUP';
+            localStorage.setItem(dbStoreBrandingKey, JSON.stringify(b));
+        }
+    } catch (e) {}
+}
+if (!localStorage.getItem(dbPaymentsKey)) localStorage.setItem(dbPaymentsKey, JSON.stringify(defaultPayments));
+
+/* ===================== BRANDING ===================== */
+function applyStoreBranding() {
+    let branding = JSON.parse(localStorage.getItem(dbStoreBrandingKey)) || { name: 'V4 TOPUP', logo: '' };
+    let brandEl = document.getElementById('store-brand-title');
+    let browserTitle = document.getElementById('page-browser-title');
+    let logoIcon = document.getElementById('store-logo-icon');
+    let logoImg = document.getElementById('store-logo-img');
+
+    if (brandEl) {
+        const n = (branding.name || 'V4 TOPUP').trim();
+        const parts = n.split(/\s+/);
+        let html;
+        if (parts.length >= 2) {
+            const last = parts.pop();
+            html = `${parts.join(' ')} <span class="text-orange-500">${last}</span>`;
+        } else if (n.length > 2) {
+            html = `${n.slice(0, -2)}<span class="text-orange-500">${n.slice(-2)}</span>`;
+        } else {
+            html = `<span class="text-orange-500">${n}</span>`;
+        }
+        brandEl.innerHTML = `${html} <span class="bg-orange-500/20 border border-orange-500/40 text-[8px] text-orange-500 font-extrabold px-1.5 py-0.5 rounded">PRO</span>`;
+    }
+    if (browserTitle) browserTitle.innerText = `${branding.name || 'V4 TOPUP'} - Ultimate Game Top-Up & Digital Store`;
+
+    if (branding.logo) {
+        logoIcon.classList.add('hidden');
+        logoImg.src = branding.logo;
+        logoImg.classList.remove('hidden');
+    } else {
+        logoImg.classList.add('hidden');
+        logoIcon.classList.remove('hidden');
+    }
+}
+applyStoreBranding();
+
+/* ===================== SESSION & UI ===================== */
+function updateNotifUI() {
+    let dot = document.getElementById('notif-dot');
+    let hasNew = localStorage.getItem(dbNotifKey) === 'true';
+    let session = JSON.parse(localStorage.getItem(dbCurrentSessionKey));
+    if (hasNew && session && session.role === 'admin') {
+        dot.classList.remove('hidden');
+        // Show top bar if not already on kasir
+        if (!document.getElementById('view-kasir').classList.contains('active')) {
+            const pendingCount = (JSON.parse(localStorage.getItem(dbTransKey)) || []).filter(t => t.status === 'pending').length;
+            if (pendingCount > 0) {
+                showAdminNotif(`${pendingCount} transaksi menunggu konfirmasi admin!`);
+            }
+        }
+    } else {
+        dot.classList.add('hidden');
+        hideAdminNotif();
+    }
+}
+
+// Listen for new transactions from other tabs
+window.addEventListener('storage', function(e) {
+    if (e.key === 's88_notif_trigger' || e.key === dbNotifKey || e.key === dbTransKey) {
+        const session = JSON.parse(localStorage.getItem(dbCurrentSessionKey));
+        if (session && session.role === 'admin') {
+            updateNotifUI();
+            playNotifSound();
+        }
+    }
+});
+
+function updateSessionUI() {
+    const session = JSON.parse(localStorage.getItem(dbCurrentSessionKey));
+    const badge = document.getElementById('user-status-badge');
+    const settingName = document.getElementById('setting-name');
+    const settingEmail = document.getElementById('setting-email');
+    const settingRole = document.getElementById('setting-role');
+    const settingAvatar = document.getElementById('setting-avatar');
+    const logoutBtn = document.getElementById('setting-logout-btn');
+    const memberMenu = document.getElementById('member-menu-items');
+    const authArea = document.getElementById('auth-button-area');
+    const menuName = document.getElementById('menu-user-name');
+    const menuRole = document.getElementById('menu-user-role');
+    const navAvatar = document.getElementById('nav-modal-avatar');
+    const adminArea = document.getElementById('admin-menu-area');
+    const walletEl = document.getElementById('member-wallet-balance');
+
+    if (session) {
+        badge.textContent = session.role === 'admin' ? 'Admin V4 TOPUP' : `Member: ${session.username}`;
+        settingName.textContent = session.username;
+        settingEmail.textContent = session.email || session.wa || '-';
+        settingRole.textContent = session.role;
+        settingAvatar.src = session.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(session.username)}&background=random`;
+        logoutBtn.classList.remove('hidden');
+        memberMenu.classList.remove('hidden');
+        authArea.innerHTML = `<button onclick="handleLogout(); closeModal('menuModal')" class="w-full bg-red-500/15 text-red-500 hover:bg-red-500/25 font-bold py-3 rounded-xl text-xs border border-red-500/20 transition">Keluar Akun</button>`;
+        menuName.textContent = session.username;
+        menuRole.textContent = session.role === 'admin' ? 'Administrator' : 'Member Aktif';
+        navAvatar.src = session.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(session.username)}&background=random`;
+        if (walletEl) walletEl.textContent = formatRp(session.balance || 0);
+
+        // Admin menu
+        if (session.role === 'admin') {
+            adminArea.innerHTML = `
+                <p class="text-[9px] text-orange-500 font-bold uppercase tracking-wider px-2.5 mb-1">Admin Panel</p>
+                <li onclick="switchView('kasir'); closeModal('menuModal')" class="flex items-center gap-3 cursor-pointer hover:bg-black/5 p-2.5 rounded-xl transition"><i class="fas fa-cash-register w-5 text-center text-indigo-500"></i> Laporan Kasir</li>
+                <li onclick="openModal('adminGameModal'); bukaModalGame(null); closeModal('menuModal')" class="flex items-center gap-3 cursor-pointer hover:bg-black/5 p-2.5 rounded-xl transition"><i class="fas fa-gamepad w-5 text-center text-orange-500"></i> Kelola Game</li>
+                <li onclick="openModal('adminBannerModal'); closeModal('menuModal')" class="flex items-center gap-3 cursor-pointer hover:bg-black/5 p-2.5 rounded-xl transition"><i class="fas fa-images w-5 text-center text-pink-500"></i> Kelola Banner</li>
+                <li onclick="openModal('adminPromoModal'); closeModal('menuModal')" class="flex items-center gap-3 cursor-pointer hover:bg-black/5 p-2.5 rounded-xl transition"><i class="fas fa-bolt w-5 text-center text-amber-500"></i> Kelola Flash Sale</li>
+                <li onclick="openModal('adminPopupModal'); closeModal('menuModal')" class="flex items-center gap-3 cursor-pointer hover:bg-black/5 p-2.5 rounded-xl transition"><i class="fas fa-bullhorn w-5 text-center text-rose-500"></i> Popup Promo Awal</li>
+                <li onclick="openModal('adminPaymentModal'); closeModal('menuModal')" class="flex items-center gap-3 cursor-pointer hover:bg-black/5 p-2.5 rounded-xl transition"><i class="fas fa-credit-card w-5 text-center text-emerald-500"></i> Metode Pembayaran</li>
+                <li onclick="openModal('adminBrandingModal'); closeModal('menuModal')" class="flex items-center gap-3 cursor-pointer hover:bg-black/5 p-2.5 rounded-xl transition"><i class="fas fa-store w-5 text-center text-amber-500"></i> Branding Store</li>
+            `;
+        } else {
+            adminArea.innerHTML = '';
+        }
+    } else {
+        badge.textContent = 'Tamu (Belum Login)';
+        settingName.textContent = 'Tamu Pengunjung';
+        settingEmail.textContent = 'Silakan login member';
+        settingRole.textContent = 'Guest';
+        settingAvatar.src = 'https://ui-avatars.com/api/?name=Guest&background=random';
+        logoutBtn.classList.add('hidden');
+        memberMenu.classList.add('hidden');
+        authArea.innerHTML = `<button onclick="closeModal('menuModal'); openModal('authModal')" class="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 rounded-xl text-xs transition shadow-lg shadow-orange-500/20">Login / Daftar Member</button>`;
+        menuName.textContent = 'Tamu Pengunjung';
+        menuRole.textContent = 'Belum Masuk';
+        navAvatar.src = 'https://ui-avatars.com/api/?name=Guest&background=random';
+        adminArea.innerHTML = '';
+        if (walletEl) walletEl.textContent = 'Rp 0';
+    }
+    updateNotifUI();
+}
+
+function switchView(viewId) {
+    document.querySelectorAll('.app-view').forEach(v => v.classList.remove('active'));
+    let target = document.getElementById('view-' + viewId);
+    if (target) target.classList.add('active');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+
+    if (viewId === 'home') renderAllData();
+    if (viewId === 'kasir') {
+        localStorage.setItem(dbNotifKey, 'false');
+        hideAdminNotif();
+        updateNotifUI();
+        renderLaporanKasir();
+    }
+    if (viewId === 'member-history') renderGoPayHistory();
+    if (viewId === 'spin-coa') { checkSpinEligibility(); drawSpinWheel(); }
+    if (viewId === 'settings') updateSessionUI();
+    if (viewId === 'member-wallet') updateSessionUI();
+}
+
+/* ===================== RENDER HOME ===================== */
+function renderAllData() {
+    renderBannerSlider();
+    renderPromoMarquee();
+    renderGames();
+    updateSessionUI();
+    updateNotifUI();
+    populatePaymentDropdowns();
+}
+
+function populatePaymentDropdowns() {
+    let payments = JSON.parse(localStorage.getItem(dbPaymentsKey)) || defaultPayments;
+    let orderSelect = document.getElementById('order-payment-method');
+    let depSelect = document.getElementById('deposit-payment-method');
+    
+    if (orderSelect) {
+        orderSelect.innerHTML = '';
+        payments.forEach(p => {
+            orderSelect.innerHTML += `<option value="${p.name}">${p.name} (${p.desc})</option>`;
+        });
+        tampilkanQrisPembayaran();
+    }
+    if (depSelect) {
+        depSelect.innerHTML = '';
+        payments.filter(p => !p.name.includes('Saldo Member')).forEach(p => {
+            depSelect.innerHTML += `<option value="${p.name}">${p.name} (${p.desc})</option>`;
+        });
+    }
+}
+
+function tampilkanQrisPembayaran() {
+    const select = document.getElementById('order-payment-method');
+    const box = document.getElementById('qris-preview-box');
+    const img = document.getElementById('qris-preview-img');
+    const desc = document.getElementById('qris-preview-desc');
+    if (!select || !box) return;
+    const payments = JSON.parse(localStorage.getItem(dbPaymentsKey)) || defaultPayments;
+    const selected = payments.find(p => p.name === select.value);
+    if (selected && selected.qrisImg) {
+        img.src = selected.qrisImg;
+        desc.textContent = selected.desc || '';
+        box.classList.remove('hidden');
+    } else {
+        box.classList.add('hidden');
+    }
+}
+
+function renderBannerSlider() {
+    let banners = JSON.parse(localStorage.getItem(dbBannerKey)) || defaultBanners;
+    let wrapper = document.getElementById('banner-slider-wrapper');
+    let dots = document.getElementById('banner-dots');
+    if (!wrapper || !dots) return;
+    wrapper.innerHTML = ''; dots.innerHTML = '';
+
+    banners.forEach((b, idx) => {
+        wrapper.innerHTML += `
+            <div class="min-w-full h-full relative flex items-center justify-between px-5 bg-cover bg-center" style="background-image: url('${b.img}')">
+                <div class="absolute inset-0 bg-gradient-to-r from-[#0b0c10] via-[#0b0c10]/80 to-transparent"></div>
+                <div class="relative z-10 w-[65%] space-y-1.5">
+                    <span class="bg-orange-500/20 border border-orange-500/40 text-orange-500 text-[8px] font-extrabold px-2 py-0.5 rounded inline-block uppercase tracking-wider">${b.badge}</span>
+                    <h2 class="font-extrabold text-xs md:text-sm text-white leading-snug drop-shadow-md">${b.title}</h2>
+                </div>
+            </div>`;
+        dots.innerHTML += `<button onclick="setBannerSlide(${idx})" class="w-1.5 h-1.5 rounded-full transition-all ${idx === currentBannerIndex ? 'bg-orange-500 w-4' : 'bg-white/40'}"></button>`;
+    });
+
+    if (!bannerInterval && banners.length > 1) {
+        bannerInterval = setInterval(() => {
+            currentBannerIndex = (currentBannerIndex + 1) % banners.length;
+            updateBannerPosition();
+        }, 4500);
+    }
+}
+function setBannerSlide(index) { currentBannerIndex = index; updateBannerPosition(); }
+function updateBannerPosition() {
+    let wrapper = document.getElementById('banner-slider-wrapper');
+    if (wrapper) wrapper.style.transform = `translateX(-${currentBannerIndex * 100}%)`;
+    let dots = document.getElementById('banner-dots');
+    if (dots) {
+        Array.from(dots.children).forEach((dot, idx) => {
+            dot.className = `w-1.5 h-1.5 rounded-full transition-all ${idx === currentBannerIndex ? 'bg-orange-500 w-4' : 'bg-white/40'}`;
+        });
+    }
+}
+
+function renderPromoMarquee() {
+    let promos = JSON.parse(localStorage.getItem(dbPromoKey)) || defaultPromos;
+    let container = document.getElementById('promo-marquee-container');
+    if (!container) return;
+    let htmlContent = '';
+    for (let i = 0; i < 2; i++) {
+        promos.forEach(p => {
+            htmlContent += `
+                <div class="bg-appCard border border-appBorder hover:border-orange-500/50 rounded-2xl p-3 flex items-center gap-3.5 min-w-[250px] shadow-lg flex-shrink-0 transition">
+                    <img src="${p.img}" class="w-14 h-14 rounded-xl object-cover border border-orange-500/30 flex-shrink-0 shadow-md" alt="">
+                    <div class="overflow-hidden">
+                        <span class="text-[8px] text-orange-500 font-extrabold uppercase bg-orange-500/15 border border-orange-500/30 px-2 py-0.5 rounded-md inline-block mb-1">${p.game}</span>
+                        <h4 class="font-bold text-xs text-appText truncate max-w-[140px]">${p.title}</h4>
+                        <p class="text-orange-500 font-extrabold text-xs mt-0.5">${p.price}</p>
+                    </div>
+                </div>`;
+        });
+    }
+    container.innerHTML = htmlContent;
+}
+
+function renderGames() {
+    let games = JSON.parse(localStorage.getItem(dbGamesKey)) || [];
+    let search = document.getElementById('inputPencarian') ? document.getElementById('inputPencarian').value.toLowerCase() : '';
+    let grid = document.getElementById('all-games-grid');
+    if (!grid) return;
+    grid.innerHTML = '';
+
+    let session = JSON.parse(localStorage.getItem(dbCurrentSessionKey));
+    let isAdmin = session && session.role === 'admin';
+
+    if (isAdmin) {
+        grid.innerHTML += `
+            <div onclick="bukaModalGame(null)" class="bg-appBg border-2 border-dashed border-orange-500/40 rounded-[16px] flex flex-col items-center justify-center cursor-pointer hover:bg-orange-500/10 transition aspect-[3/4.2]">
+                <div class="w-8 h-8 rounded-full bg-orange-500/20 flex items-center justify-center mb-1">
+                    <i class="fas fa-plus text-orange-500 text-xs"></i>
+                </div>
+                <span class="text-[9px] text-orange-500 font-bold">Tambah Game</span>
+            </div>`;
+    }
+
+    games.filter(g => g.title.toLowerCase().includes(search)).forEach(game => {
+        let adminControls = isAdmin ? `
+            <div class="absolute top-1.5 right-1.5 flex flex-col gap-1 z-30">
+                <button onclick="hapusGame('${game.id}', event)" class="bg-red-500/90 text-white w-5 h-5 rounded flex items-center justify-center text-[9px] shadow"><i class="fas fa-trash"></i></button>
+                <button onclick="bukaModalGame('${game.id}', event)" class="bg-blue-500/90 text-white w-5 h-5 rounded flex items-center justify-center text-[9px] shadow"><i class="fas fa-pen"></i></button>
+            </div>` : '';
+
+        grid.innerHTML += `
+            <div onclick="openOrderPage('${game.id}')" class="bg-appCard rounded-[16px] overflow-hidden relative cursor-pointer group border border-appBorder hover:border-orange-500/50 transition-all aspect-[3/4.2] shadow-md">
+                ${adminControls}
+                <img src="${game.img}" class="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" alt="${game.title}">
+                <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent"></div>
+                <div class="absolute inset-x-0 bottom-0 h-[45%] flex flex-col justify-end items-center pb-2.5 z-10 px-1.5">
+                    <span class="text-[7px] bg-orange-500 text-white font-extrabold px-1.5 py-0.5 rounded mb-1 uppercase">${game.badge}</span>
+                    <h4 class="font-bold text-[10px] text-white text-center leading-tight line-clamp-2">${game.title}</h4>
+                </div>
+            </div>`;
+    });
+}
+
+/* ===================== ORDER FLOW ===================== */
+function openOrderPage(gameId) {
+    const games = JSON.parse(localStorage.getItem(dbGamesKey)) || [];
+    const game = games.find(g => g.id === gameId);
+    if (!game) return;
+
+    currentOrderGameId = gameId;
+    selectedOrderItem = null;
+
+    document.getElementById('order-game-img').src = game.img;
+    document.getElementById('order-game-title').textContent = game.title;
+    document.getElementById('order-game-publisher').textContent = game.badge;
+    document.getElementById('order-userid').value = '';
+    document.getElementById('order-zoneid').value = '';
+    document.getElementById('order-whatsapp').value = '';
+    document.getElementById('order-nick-preview').classList.add('hidden');
+    document.getElementById('order-total-price').textContent = 'Rp 0';
+    document.getElementById('order-proof-file').value = '';
+
+    const grid = document.getElementById('order-nominal-grid');
+    grid.innerHTML = '';
+    game.items.forEach((item, idx) => {
+        grid.innerHTML += `
+            <button type="button" onclick="pilihNominal(${idx})" id="nominal-btn-${idx}" class="nominal-btn border border-appBorder rounded-xl p-3 text-left hover:border-orange-500 transition bg-appBg">
+                <p class="font-bold text-[11px] text-appText leading-tight">${item.name}</p>
+                <p class="text-orange-500 font-extrabold text-xs mt-1">${item.price}</p>
+            </button>`;
+    });
+
+    populatePaymentDropdowns();
+    switchView('order');
+}
+
+function pilihNominal(idx) {
+    const games = JSON.parse(localStorage.getItem(dbGamesKey)) || [];
+    const game = games.find(g => g.id === currentOrderGameId);
+    if (!game) return;
+    selectedOrderItem = game.items[idx];
+    document.getElementById('order-total-price').textContent = selectedOrderItem.price;
+
+    document.querySelectorAll('.nominal-btn').forEach((btn, i) => {
+        if (i === idx) {
+            btn.classList.add('border-orange-500', 'bg-orange-500/10');
+            btn.classList.remove('border-appBorder');
+        } else {
+            btn.classList.remove('border-orange-500', 'bg-orange-500/10');
+            btn.classList.add('border-appBorder');
+        }
+    });
+}
+
+async function prosesCheckout(e) {
+    e.preventDefault();
+    if (!selectedOrderItem) {
+        showToast('Pilih nominal item terlebih dahulu!');
+        return;
+    }
+
+    const userid = document.getElementById('order-userid').value.trim();
+    const zoneid = document.getElementById('order-zoneid').value.trim();
+    const whatsapp = document.getElementById('order-whatsapp').value.trim();
+    const payment = document.getElementById('order-payment-method').value;
+    const proofFile = document.getElementById('order-proof-file').files[0];
+    const session = JSON.parse(localStorage.getItem(dbCurrentSessionKey));
+
+    if (!userid || !whatsapp) {
+        showToast('User ID dan WhatsApp wajib diisi!');
+        return;
+    }
+
+    // Saldo member check
+    if (payment.includes('Saldo Member')) {
+        if (!session) {
+            showToast('Login dulu untuk pakai saldo member!');
+            return;
+        }
+        const price = parsePrice(selectedOrderItem.price);
+        if ((session.balance || 0) < price) {
+            showToast('Saldo member tidak cukup!');
+            return;
+        }
+    } else if (!proofFile) {
+        showToast('Upload bukti pembayaran wajib!');
+        return;
+    }
+
+    let proofBase64 = '';
+    if (proofFile) proofBase64 = await convertFileToBase64(proofFile);
+
+    const games = JSON.parse(localStorage.getItem(dbGamesKey)) || [];
+    const game = games.find(g => g.id === currentOrderGameId);
+    const trxId = 'TRX-' + Date.now().toString().slice(-8);
+
+    const transaction = {
+        id: trxId,
+        type: 'topup',
+        gameId: currentOrderGameId,
+        gameTitle: game.title,
+        itemName: selectedOrderItem.name,
+        price: selectedOrderItem.price,
+        priceNum: parsePrice(selectedOrderItem.price),
+        userid, zoneid, whatsapp, payment,
+        proof: proofBase64,
+        status: payment.includes('Saldo Member') ? 'success' : 'pending',
+        createdAt: new Date().toISOString(),
+        username: session ? session.username : 'guest'
+    };
+
+    // Deduct balance if using member saldo
+    if (payment.includes('Saldo Member') && session) {
+        let users = JSON.parse(localStorage.getItem(dbUsersKey)) || [];
+        const idx = users.findIndex(u => u.username === session.username);
+        if (idx >= 0) {
+            users[idx].balance = (users[idx].balance || 0) - parsePrice(selectedOrderItem.price);
+            // Count starlight for spin
+            if (selectedOrderItem.name.toLowerCase().includes('starlight')) {
+                users[idx].starlightCount = (users[idx].starlightCount || 0) + 1;
+            }
+            localStorage.setItem(dbUsersKey, JSON.stringify(users));
+            session.balance = users[idx].balance;
+            session.starlightCount = users[idx].starlightCount;
+            localStorage.setItem(dbCurrentSessionKey, JSON.stringify(session));
+        }
+    } else {
+        localStorage.setItem(dbNotifKey, 'true');
+    }
+
+    let trans = JSON.parse(localStorage.getItem(dbTransKey)) || [];
+    trans.unshift(transaction);
+    localStorage.setItem(dbTransKey, JSON.stringify(trans));
+
+    if (!payment.includes('Saldo Member')) {
+        localStorage.setItem(dbNotifKey, 'true');
+        localStorage.setItem('s88_notif_trigger', Date.now().toString());
+    }
+
+    showSuccessModal(
+        transaction.status === 'success' ? 'Pembayaran Berhasil!' : 'Pesanan Terkirim!',
+        transaction.status === 'success'
+            ? 'Saldo member berhasil dipotong. Pesanan sedang diproses.'
+            : 'Bukti pembayaran berhasil dikirim. Admin akan segera memverifikasi pesanan Anda.',
+        'ID: ' + trxId
+    );
+    setTimeout(() => {
+        switchView('lacak');
+        document.getElementById('search-trx-input').value = trxId;
+        setTimeout(() => cariPesananTrack(), 300);
+    }, 1500);
+    updateNotifUI();
+}
+
+/* ===================== TRACK ORDER ===================== */
+function cariPesananTrack() {
+    const q = document.getElementById('search-trx-input').value.trim().toLowerCase();
+    const container = document.getElementById('lacak-result-container');
+    if (!q) {
+        container.innerHTML = '<p class="text-xs text-appMuted text-center py-4">Masukkan ID TRX atau No WA</p>';
+        return;
+    }
+
+    const trans = JSON.parse(localStorage.getItem(dbTransKey)) || [];
+    const results = trans.filter(t =>
+        t.id.toLowerCase().includes(q) ||
+        String(t.whatsapp).includes(q)
+    );
+
+    if (results.length === 0) {
+        container.innerHTML = '<div class="bg-appCard border border-appBorder rounded-2xl p-5 text-center text-xs text-appMuted">Tidak ditemukan transaksi.</div>';
+        return;
+    }
+
+    container.innerHTML = results.map(t => {
+        const statusColor = t.status === 'success' ? 'text-emerald-500' : t.status === 'rejected' ? 'text-red-500' : 'text-amber-500';
+        const statusBg = t.status === 'success' ? 'bg-emerald-500/15 border-emerald-500/30' : t.status === 'rejected' ? 'bg-red-500/15 border-red-500/30' : 'bg-amber-500/15 border-amber-500/30';
+        return `
+        <div class="bg-appCard border border-appBorder rounded-2xl p-4 space-y-2 shadow-md">
+            <div class="flex justify-between items-start">
+                <div>
+                    <p class="font-bold text-xs text-appText">${t.id}</p>
+                    <p class="text-[10px] text-appMuted">${new Date(t.createdAt).toLocaleString('id-ID')}</p>
+                </div>
+                <span class="text-[9px] font-bold uppercase px-2 py-0.5 rounded border ${statusBg} ${statusColor}">${t.status}</span>
+            </div>
+            <div class="text-[11px] space-y-0.5">
+                <p><span class="text-appMuted">Game:</span> <b>${t.gameTitle}</b></p>
+                <p><span class="text-appMuted">Item:</span> ${t.itemName}</p>
+                <p><span class="text-appMuted">User ID:</span> ${t.userid}${t.zoneid ? ' (' + t.zoneid + ')' : ''}</p>
+                <p><span class="text-appMuted">WA:</span> ${t.whatsapp}</p>
+                <p><span class="text-appMuted">Bayar:</span> ${t.payment} — <b class="text-orange-500">${t.price}</b></p>
+            </div>
+            ${t.proof ? `<button onclick="lihatBukti('${t.proof.replace(/'/g, "\\'")}')" class="text-[10px] text-indigo-500 font-bold"><i class="fas fa-image"></i> Lihat Bukti Transfer</button>` : ''}
+        </div>`;
+    }).join('');
+}
+
+function lihatBukti(src) {
+    document.getElementById('lightbox-img-src').src = src;
+    openModal('imageLightboxModal');
+}
+
+/* ===================== CEK ID (MOCK) ===================== */
+function prosesCekIDGameStandAlone() {
+    const game = document.getElementById('cekid-game-select').value;
+    const uid = document.getElementById('cekid-userid').value.trim();
+    const zone = document.getElementById('cekid-zoneid').value.trim();
+    if (!uid) { showToast('Masukkan User ID!'); return; }
+
+    // Mock nickname generator
+    const nicknames = ['ProGamer', 'ShadowKing', 'WaifuLover', 'DiamondHunter', 'StarlightKing', 'NoobSlayer', 'MLBBLegend', 'FFMaster'];
+    const nick = nicknames[Math.floor(Math.random() * nicknames.length)] + uid.slice(-3);
+
+    document.getElementById('cekid-res-name').textContent = nick;
+    document.getElementById('cekid-res-details').textContent = `${game} • UID: ${uid}${zone ? ' • Zone: ' + zone : ''} • Status: Valid (Mock)`;
+    document.getElementById('cekid-result-box').classList.remove('hidden');
+    showToast('Nickname ditemukan (demo mock)!');
+}
+
+function cekIDGameOrder() {
+    const uid = document.getElementById('order-userid').value.trim();
+    const zone = document.getElementById('order-zoneid').value.trim();
+    if (!uid) { showToast('Isi User ID dulu!'); return; }
+
+    const nicknames = ['ProGamer', 'ShadowKing', 'WaifuLover', 'DiamondHunter', 'StarlightKing'];
+    const nick = nicknames[Math.floor(Math.random() * nicknames.length)] + uid.slice(-3);
+    const preview = document.getElementById('order-nick-preview');
+    preview.textContent = `✓ Nickname: ${nick}${zone ? ' (Zone ' + zone + ')' : ''}`;
+    preview.classList.remove('hidden');
+}
+
+/* ===================== AUTH ===================== */
+function switchAuthTab(mode) {
+    authMode = mode;
+    const loginBtn = document.getElementById('tab-btn-login');
+    const regBtn = document.getElementById('tab-btn-register');
+    const regFields = document.getElementById('auth-register-fields');
+    const submitBtn = document.getElementById('auth-submit-btn');
+
+    if (mode === 'login') {
+        loginBtn.className = 'w-1/2 py-2 rounded-lg bg-orange-500 text-white transition shadow-md';
+        regBtn.className = 'w-1/2 py-2 rounded-lg text-appMuted transition';
+        regFields.classList.add('hidden');
+        submitBtn.textContent = 'Masuk Sekarang';
+    } else {
+        regBtn.className = 'w-1/2 py-2 rounded-lg bg-orange-500 text-white transition shadow-md';
+        loginBtn.className = 'w-1/2 py-2 rounded-lg text-appMuted transition';
+        regFields.classList.remove('hidden');
+        submitBtn.textContent = 'Daftar Akun Baru';
+    }
+}
+
+function handleAuthSubmit(e) {
+    e.preventDefault();
+    const username = document.getElementById('auth-username').value.trim().toLowerCase();
+    const password = document.getElementById('auth-password').value;
+    let users = JSON.parse(localStorage.getItem(dbUsersKey)) || [];
+
+    if (authMode === 'login') {
+        const user = users.find(u => u.username.toLowerCase() === username && u.password === password);
+        if (!user) {
+            showToast('Username atau password salah!');
+            return;
+        }
+        localStorage.setItem(dbCurrentSessionKey, JSON.stringify(user));
+        showToast(`Selamat datang, ${user.username}!`);
+        closeModal('authModal');
+        updateSessionUI();
+        renderAllData();
+    } else {
+        if (users.some(u => u.username.toLowerCase() === username)) {
+            showToast('Username sudah dipakai!');
+            return;
+        }
+        const email = document.getElementById('auth-email').value.trim();
+        const wa = document.getElementById('auth-wa').value.trim();
+        const newUser = {
+            username, password, email, wa,
+            role: 'member',
+            balance: 0,
+            avatar: '',
+            starlightCount: 0
+        };
+        users.push(newUser);
+        localStorage.setItem(dbUsersKey, JSON.stringify(users));
+        localStorage.setItem(dbCurrentSessionKey, JSON.stringify(newUser));
+        showToast('Akun berhasil dibuat! Anda sudah login.');
+        closeModal('authModal');
+        updateSessionUI();
+        renderAllData();
+    }
+}
+
+function handleLogout() {
+    localStorage.removeItem(dbCurrentSessionKey);
+    showToast('Berhasil keluar.');
+    updateSessionUI();
+    switchView('home');
+}
+
+/* ===================== EDIT PROFILE ===================== */
+document.getElementById('input-edit-avatar')?.addEventListener('change', async function () {
+    if (this.files[0]) {
+        const b64 = await convertFileToBase64(this.files[0]);
+        document.getElementById('preview-edit-avatar').src = b64;
+    }
+});
+
+function simpanEditProfil() {
+    const session = JSON.parse(localStorage.getItem(dbCurrentSessionKey));
+    if (!session) { showToast('Login dulu!'); return; }
+
+    const name = document.getElementById('input-edit-name').value.trim();
+    const avatarSrc = document.getElementById('preview-edit-avatar').src;
+
+    let users = JSON.parse(localStorage.getItem(dbUsersKey)) || [];
+    const idx = users.findIndex(u => u.username === session.username);
+    if (idx >= 0) {
+        if (name) users[idx].username = name;
+        if (avatarSrc && !avatarSrc.includes('ui-avatars')) users[idx].avatar = avatarSrc;
+        localStorage.setItem(dbUsersKey, JSON.stringify(users));
+        localStorage.setItem(dbCurrentSessionKey, JSON.stringify(users[idx]));
+    }
+    showToast('Profil berhasil disimpan!');
+    closeModal('editProfileModal');
+    updateSessionUI();
+}
+
+/* ===================== DEPOSIT ===================== */
+async function prosesDepositSaldo(e) {
+    e.preventDefault();
+    const session = JSON.parse(localStorage.getItem(dbCurrentSessionKey));
+    if (!session) {
+        showToast('Login dulu untuk deposit!');
+        openModal('authModal');
+        return;
+    }
+
+    const amount = parseInt(document.getElementById('deposit-amount-select').value, 10);
+    const whatsapp = document.getElementById('deposit-whatsapp').value.trim();
+    const payment = document.getElementById('deposit-payment-method').value;
+    const proofFile = document.getElementById('deposit-proof-file').files[0];
+
+    if (!proofFile) { showToast('Upload bukti transfer!'); return; }
+
+    const proofBase64 = await convertFileToBase64(proofFile);
+    const trxId = 'DEP-' + Date.now().toString().slice(-8);
+
+    const transaction = {
+        id: trxId,
+        type: 'deposit',
+        gameTitle: 'Deposit Saldo',
+        itemName: 'Top-Up Saldo Member',
+        price: formatRp(amount),
+        priceNum: amount,
+        userid: session.username,
+        zoneid: '',
+        whatsapp, payment,
+        proof: proofBase64,
+        status: 'pending',
+        createdAt: new Date().toISOString(),
+        username: session.username
+    };
+
+    let trans = JSON.parse(localStorage.getItem(dbTransKey)) || [];
+    trans.unshift(transaction);
+    localStorage.setItem(dbTransKey, JSON.stringify(trans));
+    localStorage.setItem(dbNotifKey, 'true');
+
+    // Trigger admin notif if admin is online in another tab
+    try {
+        const session = JSON.parse(localStorage.getItem(dbCurrentSessionKey));
+        // broadcast for same-browser admin
+        localStorage.setItem('s88_notif_trigger', Date.now().toString());
+    } catch(e) {}
+
+    showSuccessModal(
+        'Deposit Terkirim!',
+        'Permintaan deposit Anda berhasil dikirim ke Admin. Mohon tunggu konfirmasi. Saldo akan otomatis bertambah setelah disetujui.',
+        'ID: ' + trxId
+    );
+    document.getElementById('deposit-proof-file').value = '';
+    updateNotifUI();
+}
+
+/* ===================== KASIR ADMIN ===================== */
+function renderLaporanKasir() {
+    const trans = JSON.parse(localStorage.getItem(dbTransKey)) || [];
+    const list = document.getElementById('kasir-transaction-list');
+    let totalOmset = 0;
+    let totalTrx = 0;
+
+    trans.forEach(t => {
+        if (t.status === 'success') {
+            totalOmset += t.priceNum || 0;
+            totalTrx++;
+        }
+    });
+
+    document.getElementById('kasir-total-omset').textContent = formatRp(totalOmset);
+    document.getElementById('kasir-total-trx').textContent = totalTrx;
+
+    if (trans.length === 0) {
+        list.innerHTML = '<p class="text-xs text-appMuted text-center py-6">Belum ada transaksi.</p>';
+        return;
+    }
+
+    list.innerHTML = trans.map(t => {
+        const statusColor = t.status === 'success' ? 'text-emerald-500' : t.status === 'rejected' ? 'text-red-500' : 'text-amber-500';
+        return `
+        <div class="border border-appBorder rounded-xl p-3 space-y-2 bg-appBg">
+            <div class="flex justify-between items-start">
+                <div>
+                    <p class="font-bold text-[11px] text-appText">${t.id} • ${t.type.toUpperCase()}</p>
+                    <p class="text-[9px] text-appMuted">${new Date(t.createdAt).toLocaleString('id-ID')}</p>
+                </div>
+                <span class="text-[9px] font-bold uppercase ${statusColor}">${t.status}</span>
+            </div>
+            <p class="text-[10px]"><b>${t.gameTitle}</b> — ${t.itemName}</p>
+            <p class="text-[10px] text-appMuted">User: ${t.userid} | WA: ${t.whatsapp}</p>
+            <p class="text-[10px]">Bayar: ${t.payment} • <b class="text-orange-500">${t.price}</b></p>
+            <div class="flex gap-2 pt-1">
+                ${t.proof ? `<button onclick="lihatBukti('${t.proof.replace(/'/g, "\\'")}')" class="text-[9px] bg-indigo-500/20 text-indigo-500 px-2 py-1 rounded font-bold">Bukti</button>` : ''}
+                ${t.status === 'pending' ? `
+                    <button onclick="updateTrxStatus('${t.id}','success')" class="text-[9px] bg-emerald-500/20 text-emerald-500 px-2 py-1 rounded font-bold">Approve</button>
+                    <button onclick="updateTrxStatus('${t.id}','rejected')" class="text-[9px] bg-red-500/20 text-red-500 px-2 py-1 rounded font-bold">Tolak</button>
+                ` : ''}
+            </div>
+        </div>`;
+    }).join('');
+}
+
+function updateTrxStatus(id, status) {
+    let trans = JSON.parse(localStorage.getItem(dbTransKey)) || [];
+    const idx = trans.findIndex(t => t.id === id);
+    if (idx < 0) return;
+
+    const t = trans[idx];
+    t.status = status;
+
+    // Jika deposit disetujui → tambah saldo user
+    if (status === 'success' && t.type === 'deposit') {
+        let users = JSON.parse(localStorage.getItem(dbUsersKey)) || [];
+        const uIdx = users.findIndex(u => u.username === t.username);
+        if (uIdx >= 0) {
+            users[uIdx].balance = (users[uIdx].balance || 0) + t.priceNum;
+            localStorage.setItem(dbUsersKey, JSON.stringify(users));
+
+            // Update session jika sedang login sebagai user tersebut
+            const session = JSON.parse(localStorage.getItem(dbCurrentSessionKey));
+            if (session && session.username === t.username) {
+                session.balance = users[uIdx].balance;
+                localStorage.setItem(dbCurrentSessionKey, JSON.stringify(session));
+            }
+        }
+    }
+
+    // Starlight count on success topup
+    if (status === 'success' && t.type === 'topup' && t.itemName.toLowerCase().includes('starlight')) {
+        let users = JSON.parse(localStorage.getItem(dbUsersKey)) || [];
+        const uIdx = users.findIndex(u => u.username === t.username);
+        if (uIdx >= 0) {
+            users[uIdx].starlightCount = (users[uIdx].starlightCount || 0) + 1;
+            localStorage.setItem(dbUsersKey, JSON.stringify(users));
+            const session = JSON.parse(localStorage.getItem(dbCurrentSessionKey));
+            if (session && session.username === t.username) {
+                session.starlightCount = users[uIdx].starlightCount;
+                localStorage.setItem(dbCurrentSessionKey, JSON.stringify(session));
+            }
+        }
+    }
+
+    localStorage.setItem(dbTransKey, JSON.stringify(trans));
+    showToast(`Transaksi ${id} → ${status}`);
+    renderLaporanKasir();
+}
+
+function resetLaporanKasir() {
+    if (!confirm('Yakin reset semua transaksi? Data tidak bisa dikembalikan.')) return;
+    localStorage.setItem(dbTransKey, JSON.stringify([]));
+    showToast('Semua transaksi dihapus.');
+    renderLaporanKasir();
+}
+
+/* ===================== GOPAY HISTORY ===================== */
+function renderGoPayHistory() {
+    const session = JSON.parse(localStorage.getItem(dbCurrentSessionKey));
+    const list = document.getElementById('gopay-history-list');
+    if (!session) {
+        list.innerHTML = '<p class="text-xs text-appMuted text-center py-6">Login untuk melihat riwayat.</p>';
+        return;
+    }
+
+    const trans = (JSON.parse(localStorage.getItem(dbTransKey)) || []).filter(t => t.username === session.username);
+
+    if (trans.length === 0) {
+        list.innerHTML = '<p class="text-xs text-appMuted text-center py-6">Belum ada transaksi.</p>';
+        return;
+    }
+
+    list.innerHTML = trans.map(t => {
+        const isIn = t.type === 'deposit' && t.status === 'success';
+        const color = isIn ? 'text-emerald-500' : 'text-appText';
+        const icon = isIn ? 'fa-arrow-down' : 'fa-arrow-up';
+        return `
+        <div class="flex items-center gap-3 p-2.5 rounded-xl bg-appBg border border-appBorder">
+            <div class="w-9 h-9 rounded-full ${isIn ? 'bg-emerald-500/20 text-emerald-500' : 'bg-orange-500/20 text-orange-500'} flex items-center justify-center">
+                <i class="fas ${icon} text-xs"></i>
+            </div>
+            <div class="flex-1 min-w-0">
+                <p class="font-bold text-[11px] text-appText truncate">${t.itemName}</p>
+                <p class="text-[9px] text-appMuted">${t.id} • ${new Date(t.createdAt).toLocaleDateString('id-ID')}</p>
+            </div>
+            <div class="text-right">
+                <p class="font-extrabold text-[11px] ${color}">${isIn ? '+' : '-'}${t.price}</p>
+                <p class="text-[8px] uppercase ${t.status === 'success' ? 'text-emerald-500' : 'text-amber-500'}">${t.status}</p>
+            </div>
+        </div>`;
+    }).join('');
+}
+
+/* ===================== SPIN WHEEL ===================== */
+const spinPrizes = [
+    { label: 'Rp 1.000', value: 1000, color: '#f59e0b' },
+    { label: 'Rp 2.000', value: 2000, color: '#f97316' },
+    { label: 'Rp 3.000', value: 3000, color: '#ef4444' },
+    { label: 'Rp 5.000', value: 5000, color: '#8b5cf6' },
+    { label: 'Rp 1.000', value: 1000, color: '#06b6d4' },
+    { label: 'Rp 10.000', value: 10000, color: '#10b981' },
+    { label: 'Rp 2.000', value: 2000, color: '#ec4899' },
+    { label: 'Rp 1.000', value: 1000, color: '#6366f1' }
+];
+
+function drawSpinWheel() {
+    const canvas = document.getElementById('wheelCanvas');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const cx = canvas.width / 2;
+    const cy = canvas.height / 2;
+    const r = canvas.width / 2 - 4;
+    const n = spinPrizes.length;
+    const arc = (2 * Math.PI) / n;
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    for (let i = 0; i < n; i++) {
+        const start = i * arc - Math.PI / 2;
+        ctx.beginPath();
+        ctx.moveTo(cx, cy);
+        ctx.arc(cx, cy, r, start, start + arc);
+        ctx.closePath();
+        ctx.fillStyle = spinPrizes[i].color;
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+
+        // Text
+        ctx.save();
+        ctx.translate(cx, cy);
+        ctx.rotate(start + arc / 2);
+        ctx.textAlign = 'right';
+        ctx.fillStyle = '#fff';
+        ctx.font = 'bold 11px sans-serif';
+        ctx.fillText(spinPrizes[i].label, r - 12, 4);
+        ctx.restore();
+    }
+
+    // Center circle
+    ctx.beginPath();
+    ctx.arc(cx, cy, 28, 0, 2 * Math.PI);
+    ctx.fillStyle = '#13151b';
+    ctx.fill();
+    ctx.strokeStyle = '#f59e0b';
+    ctx.lineWidth = 3;
+    ctx.stroke();
+    ctx.fillStyle = '#f59e0b';
+    ctx.font = 'bold 10px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('SPIN', cx, cy + 4);
+}
+
+function checkSpinEligibility() {
+    const session = JSON.parse(localStorage.getItem(dbCurrentSessionKey));
+    const progressText = document.getElementById('spin-progress-text');
+    const progressBar = document.getElementById('spin-progress-bar');
+    const statusNote = document.getElementById('spin-status-note');
+    const spinBtn = document.getElementById('spin-button');
+
+    const count = session ? (session.starlightCount || 0) : 0;
+    const pct = Math.min(100, (count / 10) * 100);
+
+    progressText.textContent = `${count} / 10 Starlight`;
+    progressBar.style.width = pct + '%';
+
+    if (count >= 10) {
+        statusNote.innerHTML = '<i class="fas fa-unlock text-emerald-500"></i> <span class="text-emerald-500">Siap spin! Klik tombol di bawah.</span>';
+        spinBtn.disabled = false;
+    } else {
+        statusNote.innerHTML = `<i class="fas fa-lock"></i> Beli item Starlight ${10 - count}x lagi untuk menyepin!`;
+        spinBtn.disabled = true;
+    }
+}
+
+function putarWheelCoA() {
+    if (isSpinning) return;
+    const session = JSON.parse(localStorage.getItem(dbCurrentSessionKey));
+    if (!session || (session.starlightCount || 0) < 10) {
+        showToast('Progress Starlight belum cukup!');
+        return;
+    }
+
+    isSpinning = true;
+    const btn = document.getElementById('spin-button');
+    btn.disabled = true;
+
+    const prizeIdx = Math.floor(Math.random() * spinPrizes.length);
+    const n = spinPrizes.length;
+    const arcDeg = 360 / n;
+    // Stop so the prize lands at the top pointer
+    const extraSpins = 5 + Math.floor(Math.random() * 3);
+    const targetDeg = extraSpins * 360 + (360 - (prizeIdx * arcDeg + arcDeg / 2));
+
+    const canvas = document.getElementById('wheelCanvas');
+    canvas.style.transition = 'transform 4.5s cubic-bezier(0.15, 0.99, 0.18, 1)';
+    canvas.style.transform = `rotate(${targetDeg}deg)`;
+
+    setTimeout(() => {
+        const prize = spinPrizes[prizeIdx];
+        // Add to balance
+        let users = JSON.parse(localStorage.getItem(dbUsersKey)) || [];
+        const uIdx = users.findIndex(u => u.username === session.username);
+        if (uIdx >= 0) {
+            users[uIdx].balance = (users[uIdx].balance || 0) + prize.value;
+            users[uIdx].starlightCount = 0; // reset progress after spin
+            localStorage.setItem(dbUsersKey, JSON.stringify(users));
+            session.balance = users[uIdx].balance;
+            session.starlightCount = 0;
+            localStorage.setItem(dbCurrentSessionKey, JSON.stringify(session));
+        }
+
+        showToast(`🎉 Selamat! Kamu menang ${prize.label}! Saldo ditambahkan.`);
+        isSpinning = false;
+        canvas.style.transition = 'none';
+        canvas.style.transform = `rotate(${targetDeg % 360}deg)`;
+        checkSpinEligibility();
+        updateSessionUI();
+    }, 4600);
+}
+
+/* ===================== ADMIN: GAME CRUD ===================== */
+function addAdminItemRow(name = '', price = '') {
+    const container = document.getElementById('dynamic-items-container');
+    const div = document.createElement('div');
+    div.className = 'flex gap-2 items-center';
+    div.innerHTML = `
+        <input type="text" placeholder="Nama Item" value="${name}" class="item-name flex-1 bg-appInput border border-appBorder rounded-lg px-2 py-1.5 text-[10px] text-appText">
+        <input type="text" placeholder="Rp 25.000" value="${price}" class="item-price w-24 bg-appInput border border-appBorder rounded-lg px-2 py-1.5 text-[10px] text-appText">
+        <button type="button" onclick="this.parentElement.remove()" class="text-red-500 text-xs px-1"><i class="fas fa-times"></i></button>
+    `;
+    container.appendChild(div);
+}
+
+function bukaModalGame(id, event) {
+    if (event) event.stopPropagation();
+    openModal('adminGameModal');
+    const titleEl = document.getElementById('gameModalTitle');
+    document.getElementById('dynamic-items-container').innerHTML = '';
+
+    if (id) {
+        const games = JSON.parse(localStorage.getItem(dbGamesKey)) || [];
+        const game = games.find(g => g.id === id);
+        if (!game) return;
+        titleEl.innerHTML = '<i class="fas fa-pen"></i> Edit Game';
+        document.getElementById('gameId').value = game.id;
+        document.getElementById('gameOldImg').value = game.img;
+        document.getElementById('gameTitle').value = game.title;
+        document.getElementById('gameBadge').value = game.badge;
+        game.items.forEach(it => addAdminItemRow(it.name, it.price));
+    } else {
+        titleEl.innerHTML = '<i class="fas fa-plus"></i> Tambah Game Baru';
+        document.getElementById('gameId').value = '';
+        document.getElementById('gameOldImg').value = '';
+        document.getElementById('gameTitle').value = '';
+        document.getElementById('gameBadge').value = 'VIA UID';
+        document.getElementById('gameImg').value = '';
+        addAdminItemRow('', '');
+        addAdminItemRow('', '');
+    }
+}
+
+async function simpanGame() {
+    const id = document.getElementById('gameId').value || ('g' + Date.now());
+    const title = document.getElementById('gameTitle').value.trim();
+    const badge = document.getElementById('gameBadge').value.trim();
+    const oldImg = document.getElementById('gameOldImg').value;
+    const imgFile = document.getElementById('gameImg').files[0];
+
+    let img = oldImg;
+    if (imgFile) img = await convertFileToBase64(imgFile);
+    if (!img) img = 'https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=400&auto=format&fit=crop';
+
+    const items = [];
+    document.querySelectorAll('#dynamic-items-container > div').forEach(row => {
+        const name = row.querySelector('.item-name').value.trim();
+        const price = row.querySelector('.item-price').value.trim();
+        if (name && price) items.push({ name, price });
+    });
+
+    if (!title || items.length === 0) {
+        showToast('Isi nama game dan minimal 1 item!');
+        return;
+    }
+
+    let games = JSON.parse(localStorage.getItem(dbGamesKey)) || [];
+    const existingIdx = games.findIndex(g => g.id === id);
+    const gameData = { id, title, badge, img, items };
+
+    if (existingIdx >= 0) games[existingIdx] = gameData;
+    else games.push(gameData);
+
+    localStorage.setItem(dbGamesKey, JSON.stringify(games));
+    showToast('Game berhasil disimpan!');
+    closeModal('adminGameModal');
+    renderGames();
+}
+
+function hapusGame(id, event) {
+    if (event) event.stopPropagation();
+    if (!confirm('Hapus game ini?')) return;
+    let games = JSON.parse(localStorage.getItem(dbGamesKey)) || [];
+    games = games.filter(g => g.id !== id);
+    localStorage.setItem(dbGamesKey, JSON.stringify(games));
+    showToast('Game dihapus.');
+    renderGames();
+}
+
+/* ===================== ADMIN: PAYMENTS ===================== */
+function renderAdminPayments() {
+    const payments = JSON.parse(localStorage.getItem(dbPaymentsKey)) || defaultPayments;
+    const list = document.getElementById('admin-payment-list');
+    list.innerHTML = '';
+    payments.forEach((p, i) => {
+        list.innerHTML += `
+            <div class="border border-appBorder rounded-xl p-3 bg-appBg space-y-2 pay-row">
+                <div class="flex gap-2 items-center">
+                    <input type="text" value="${p.name || ''}" class="pay-name flex-1 bg-appInput border border-appBorder rounded-lg px-2 py-1.5 text-[10px] text-appText" placeholder="Nama (QRIS / BCA / DANA)">
+                    <button type="button" onclick="this.closest('.pay-row').remove()" class="text-red-500 text-xs px-1"><i class="fas fa-trash"></i></button>
+                </div>
+                <input type="text" value="${p.desc || ''}" class="pay-desc w-full bg-appInput border border-appBorder rounded-lg px-2 py-1.5 text-[10px] text-appText" placeholder="No Rek / Deskripsi">
+                <div>
+                    <label class="text-[9px] text-appMuted font-bold">Upload Gambar QRIS (opsional)</label>
+                    <input type="file" accept="image/*" class="pay-qris-file w-full text-[10px] text-appMuted mt-1 file:bg-orange-500 file:text-white file:border-0 file:rounded-lg file:px-2 file:py-1 file:text-[10px] file:font-bold">
+                    <input type="hidden" class="pay-qris-img" value="${p.qrisImg || ''}">
+                    ${p.qrisImg ? `<img src="${p.qrisImg}" class="qris-preview mt-2 mx-auto">` : ''}
+                </div>
+            </div>`;
+    });
+    // Preview on file select
+    list.querySelectorAll('.pay-qris-file').forEach(input => {
+        input.addEventListener('change', async function() {
+            if (this.files[0]) {
+                const b64 = await convertFileToBase64(this.files[0]);
+                this.parentElement.querySelector('.pay-qris-img').value = b64;
+                let img = this.parentElement.querySelector('img');
+                if (!img) {
+                    img = document.createElement('img');
+                    img.className = 'qris-preview mt-2 mx-auto';
+                    this.parentElement.appendChild(img);
+                }
+                img.src = b64;
+            }
+        });
+    });
+}
+
+function tambahSlotPaymentAdmin() {
+    const list = document.getElementById('admin-payment-list');
+    const div = document.createElement('div');
+    div.className = 'border border-appBorder rounded-xl p-3 bg-appBg space-y-2 pay-row';
+    div.innerHTML = `
+        <div class="flex gap-2 items-center">
+            <input type="text" value="" class="pay-name flex-1 bg-appInput border border-appBorder rounded-lg px-2 py-1.5 text-[10px] text-appText" placeholder="Nama (QRIS / BCA / DANA)">
+            <button type="button" onclick="this.closest('.pay-row').remove()" class="text-red-500 text-xs px-1"><i class="fas fa-trash"></i></button>
+        </div>
+        <input type="text" value="" class="pay-desc w-full bg-appInput border border-appBorder rounded-lg px-2 py-1.5 text-[10px] text-appText" placeholder="No Rek / Deskripsi">
+        <div>
+            <label class="text-[9px] text-appMuted font-bold">Upload Gambar QRIS (opsional)</label>
+            <input type="file" accept="image/*" class="pay-qris-file w-full text-[10px] text-appMuted mt-1 file:bg-orange-500 file:text-white file:border-0 file:rounded-lg file:px-2 file:py-1 file:text-[10px] file:font-bold">
+            <input type="hidden" class="pay-qris-img" value="">
+        </div>`;
+    list.appendChild(div);
+    div.querySelector('.pay-qris-file').addEventListener('change', async function() {
+        if (this.files[0]) {
+            const b64 = await convertFileToBase64(this.files[0]);
+            this.parentElement.querySelector('.pay-qris-img').value = b64;
+            let img = this.parentElement.querySelector('img');
+            if (!img) {
+                img = document.createElement('img');
+                img.className = 'qris-preview mt-2 mx-auto';
+                this.parentElement.appendChild(img);
+            }
+            img.src = b64;
+        }
+    });
+}
+
+function simpanMasterPayments() {
+    const payments = [];
+    document.querySelectorAll('#admin-payment-list .pay-row').forEach(row => {
+        const name = row.querySelector('.pay-name').value.trim();
+        const desc = row.querySelector('.pay-desc').value.trim();
+        const qrisImg = row.querySelector('.pay-qris-img')?.value || '';
+        if (name) payments.push({ name, desc, qrisImg });
+    });
+    localStorage.setItem(dbPaymentsKey, JSON.stringify(payments));
+    showSuccessModal('Tersimpan!', 'Metode pembayaran & QRIS berhasil disimpan.');
+    closeModal('adminPaymentModal');
+    populatePaymentDropdowns();
+}
+
+/* ===================== ADMIN: BANNERS (upload file) ===================== */
+function bindBannerFileInput(row) {
+    const fileInput = row.querySelector('.banner-file');
+    if (!fileInput) return;
+    fileInput.addEventListener('change', async function() {
+        if (!this.files[0]) return;
+        const b64 = await convertFileToBase64(this.files[0]);
+        row.querySelector('.banner-img-data').value = b64;
+        let prev = row.querySelector('.banner-preview');
+        if (!prev) {
+            prev = document.createElement('img');
+            prev.className = 'banner-preview w-full h-24 object-cover rounded-lg border border-orange-500/40 mt-1';
+            this.parentElement.appendChild(prev);
+        }
+        prev.src = b64;
+        prev.classList.remove('hidden');
+    });
+}
+
+function renderAdminBanners() {
+    const banners = JSON.parse(localStorage.getItem(dbBannerKey)) || defaultBanners;
+    const list = document.getElementById('admin-banner-list');
+    list.innerHTML = '';
+    banners.forEach((b) => {
+        const div = document.createElement('div');
+        div.className = 'border border-appBorder rounded-xl p-3 bg-appBg space-y-2 banner-row';
+        div.innerHTML = `
+            <input type="text" value="${(b.badge || '').replace(/"/g, '&quot;')}" class="banner-badge w-full bg-appInput border border-appBorder rounded-lg px-2 py-1.5 text-[10px] text-appText" placeholder="Badge (cth: FLASH SALE)">
+            <input type="text" value="${(b.title || '').replace(/"/g, '&quot;')}" class="banner-title w-full bg-appInput border border-appBorder rounded-lg px-2 py-1.5 text-[10px] text-appText" placeholder="Judul Banner">
+            <div>
+                <label class="text-[9px] text-appMuted font-bold">Gambar Banner — Upload File</label>
+                <input type="file" accept="image/*" class="banner-file w-full text-[10px] text-appMuted mt-1 file:bg-orange-500 file:text-white file:border-0 file:rounded-lg file:px-2 file:py-1 file:text-[10px] file:font-bold">
+                <input type="hidden" class="banner-img-data" value="">
+                ${b.img ? `<img src="${b.img}" class="banner-preview w-full h-24 object-cover rounded-lg border border-orange-500/40 mt-1">` : '<img src="" class="banner-preview hidden w-full h-24 object-cover rounded-lg border border-orange-500/40 mt-1">'}
+            </div>
+            <button type="button" onclick="this.closest('.banner-row').remove()" class="text-red-500 text-[10px] font-bold"><i class="fas fa-trash"></i> Hapus Banner</button>`;
+        // store existing img in hidden field
+        div.querySelector('.banner-img-data').value = b.img || '';
+        list.appendChild(div);
+        bindBannerFileInput(div);
+    });
+}
+
+function tambahSlotBannerAdmin() {
+    const list = document.getElementById('admin-banner-list');
+    const div = document.createElement('div');
+    div.className = 'border border-appBorder rounded-xl p-3 bg-appBg space-y-2 banner-row';
+    div.innerHTML = `
+        <input type="text" value="" class="banner-badge w-full bg-appInput border border-appBorder rounded-lg px-2 py-1.5 text-[10px] text-appText" placeholder="Badge (cth: FLASH SALE)">
+        <input type="text" value="" class="banner-title w-full bg-appInput border border-appBorder rounded-lg px-2 py-1.5 text-[10px] text-appText" placeholder="Judul Banner">
+        <div>
+            <label class="text-[9px] text-appMuted font-bold">Gambar Banner — Upload File</label>
+            <input type="file" accept="image/*" class="banner-file w-full text-[10px] text-appMuted mt-1 file:bg-orange-500 file:text-white file:border-0 file:rounded-lg file:px-2 file:py-1 file:text-[10px] file:font-bold">
+            <input type="hidden" class="banner-img-data" value="">
+            <img src="" class="banner-preview hidden w-full h-24 object-cover rounded-lg border border-orange-500/40 mt-1">
+        </div>
+        <button type="button" onclick="this.closest('.banner-row').remove()" class="text-red-500 text-[10px] font-bold"><i class="fas fa-trash"></i> Hapus Banner</button>`;
+    list.appendChild(div);
+    bindBannerFileInput(div);
+}
+
+function simpanBannerMaster() {
+    const banners = [];
+    document.querySelectorAll('#admin-banner-list .banner-row').forEach(row => {
+        const badge = row.querySelector('.banner-badge').value.trim();
+        const title = row.querySelector('.banner-title').value.trim();
+        const img = row.querySelector('.banner-img-data').value.trim();
+        if (title || img) {
+            banners.push({
+                badge: badge || 'PROMO',
+                title: title || 'Banner Promo',
+                img: img || 'https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=800&auto=format&fit=crop'
+            });
+        }
+    });
+    if (banners.length === 0) {
+        showErrorModal('Gagal', 'Minimal 1 banner harus diisi.');
+        return;
+    }
+    localStorage.setItem(dbBannerKey, JSON.stringify(banners));
+    currentBannerIndex = 0;
+    if (bannerInterval) { clearInterval(bannerInterval); bannerInterval = null; }
+    showSuccessModal('Banner Tersimpan!', 'Gambar banner berhasil diupload & disimpan.');
+    closeModal('adminBannerModal');
+    renderBannerSlider();
+}
+
+/* ===================== ADMIN: PROMO FLASH SALE ===================== */
+function bindPromoFileInput(row) {
+    const fileInput = row.querySelector('.promo-file');
+    if (!fileInput) return;
+    fileInput.addEventListener('change', async function() {
+        if (!this.files[0]) return;
+        const b64 = await convertFileToBase64(this.files[0]);
+        row.querySelector('.promo-img-data').value = b64;
+        let prev = row.querySelector('.promo-preview');
+        if (!prev) {
+            prev = document.createElement('img');
+            prev.className = 'promo-preview w-16 h-16 object-cover rounded-lg border border-orange-500/40 mt-1';
+            this.parentElement.appendChild(prev);
+        }
+        prev.src = b64;
+        prev.classList.remove('hidden');
+    });
+}
+
+function renderAdminPromos() {
+    const promos = JSON.parse(localStorage.getItem(dbPromoKey)) || defaultPromos;
+    const list = document.getElementById('admin-promo-list');
+    if (!list) return;
+    list.innerHTML = '';
+    promos.forEach((p) => {
+        const div = document.createElement('div');
+        div.className = 'border border-appBorder rounded-xl p-3 bg-appBg space-y-2 promo-row';
+        div.innerHTML = `
+            <input type="text" value="${(p.title || '').replace(/"/g, '&quot;')}" class="promo-title w-full bg-appInput border border-appBorder rounded-lg px-2 py-1.5 text-[10px] text-appText" placeholder="Nama Item (cth: Weekly Pass)">
+            <input type="text" value="${(p.game || '').replace(/"/g, '&quot;')}" class="promo-game w-full bg-appInput border border-appBorder rounded-lg px-2 py-1.5 text-[10px] text-appText" placeholder="Nama Game">
+            <input type="text" value="${(p.price || '').replace(/"/g, '&quot;')}" class="promo-price w-full bg-appInput border border-appBorder rounded-lg px-2 py-1.5 text-[10px] text-appText" placeholder="Harga (cth: Rp 27.768)">
+            <div>
+                <label class="text-[9px] text-appMuted font-bold">Gambar Promo — Upload File</label>
+                <input type="file" accept="image/*" class="promo-file w-full text-[10px] text-appMuted mt-1 file:bg-orange-500 file:text-white file:border-0 file:rounded-lg file:px-2 file:py-1 file:text-[10px] file:font-bold">
+                <input type="hidden" class="promo-img-data" value="">
+                ${p.img ? `<img src="${p.img}" class="promo-preview w-16 h-16 object-cover rounded-lg border border-orange-500/40 mt-1">` : '<img src="" class="promo-preview hidden w-16 h-16 object-cover rounded-lg border border-orange-500/40 mt-1">'}
+            </div>
+            <button type="button" onclick="this.closest('.promo-row').remove()" class="text-red-500 text-[10px] font-bold"><i class="fas fa-trash"></i> Hapus Promo</button>`;
+        div.querySelector('.promo-img-data').value = p.img || '';
+        list.appendChild(div);
+        bindPromoFileInput(div);
+    });
+}
+
+function tambahSlotPromoAdmin() {
+    const list = document.getElementById('admin-promo-list');
+    if (!list) return;
+    const div = document.createElement('div');
+    div.className = 'border border-appBorder rounded-xl p-3 bg-appBg space-y-2 promo-row';
+    div.innerHTML = `
+        <input type="text" value="" class="promo-title w-full bg-appInput border border-appBorder rounded-lg px-2 py-1.5 text-[10px] text-appText" placeholder="Nama Item (cth: Weekly Pass)">
+        <input type="text" value="" class="promo-game w-full bg-appInput border border-appBorder rounded-lg px-2 py-1.5 text-[10px] text-appText" placeholder="Nama Game">
+        <input type="text" value="" class="promo-price w-full bg-appInput border border-appBorder rounded-lg px-2 py-1.5 text-[10px] text-appText" placeholder="Harga (cth: Rp 27.768)">
+        <div>
+            <label class="text-[9px] text-appMuted font-bold">Gambar Promo — Upload File</label>
+            <input type="file" accept="image/*" class="promo-file w-full text-[10px] text-appMuted mt-1 file:bg-orange-500 file:text-white file:border-0 file:rounded-lg file:px-2 file:py-1 file:text-[10px] file:font-bold">
+            <input type="hidden" class="promo-img-data" value="">
+            <img src="" class="promo-preview hidden w-16 h-16 object-cover rounded-lg border border-orange-500/40 mt-1">
+        </div>
+        <button type="button" onclick="this.closest('.promo-row').remove()" class="text-red-500 text-[10px] font-bold"><i class="fas fa-trash"></i> Hapus Promo</button>`;
+    list.appendChild(div);
+    bindPromoFileInput(div);
+}
+
+function simpanPromoMaster() {
+    const promos = [];
+    document.querySelectorAll('#admin-promo-list .promo-row').forEach(row => {
+        const title = row.querySelector('.promo-title').value.trim();
+        const game = row.querySelector('.promo-game').value.trim();
+        const price = row.querySelector('.promo-price').value.trim();
+        const img = row.querySelector('.promo-img-data').value.trim();
+        if (title) {
+            promos.push({
+                title,
+                game: game || 'Game',
+                price: price || 'Rp 0',
+                img: img || 'https://images.unsplash.com/photo-1624138784614-87fd1b6528f8?q=80&w=300&auto=format&fit=crop'
+            });
+        }
+    });
+    localStorage.setItem(dbPromoKey, JSON.stringify(promos));
+    showSuccessModal('Promo Tersimpan!', 'Flash Sale berhasil diupdate dan langsung tampil di beranda.');
+    closeModal('adminPromoModal');
+    renderPromoMarquee();
+}
+
+/* ===================== ADMIN: BRANDING ===================== */
+async function simpanStoreBranding() {
+    const name = document.getElementById('admin-store-name-input').value.trim() || 'V4 TOPUP';
+    const file = document.getElementById('admin-store-logo-file').files[0];
+    let logo = JSON.parse(localStorage.getItem(dbStoreBrandingKey))?.logo || '';
+    if (file) logo = await convertFileToBase64(file);
+    localStorage.setItem(dbStoreBrandingKey, JSON.stringify({ name, logo }));
+    applyStoreBranding();
+    showToast('Branding store disimpan!');
+    closeModal('adminBrandingModal');
+}
+
+/* ===================== PROMO POPUP ===================== */
+function loadPromoPopupAdmin() {
+    const data = JSON.parse(localStorage.getItem(dbPopupKey)) || {};
+    document.getElementById('popup-enabled').checked = data.enabled !== false;
+    document.getElementById('popup-title').value = data.title || '';
+    document.getElementById('popup-desc').value = data.desc || '';
+    document.getElementById('popup-img-data').value = data.img || '';
+    document.getElementById('popup-btn1-label').value = data.btn1Label || '';
+    document.getElementById('popup-btn1-link').value = data.btn1Link || '';
+    document.getElementById('popup-btn2-label').value = data.btn2Label || '';
+    document.getElementById('popup-btn2-link').value = data.btn2Link || '';
+    const prev = document.getElementById('popup-img-preview');
+    if (data.img) {
+        prev.src = data.img;
+        prev.classList.remove('hidden');
+    } else {
+        prev.classList.add('hidden');
+    }
+}
+
+document.getElementById('popup-img-file')?.addEventListener('change', async function() {
+    if (this.files[0]) {
+        const b64 = await convertFileToBase64(this.files[0]);
+        document.getElementById('popup-img-data').value = b64;
+        const prev = document.getElementById('popup-img-preview');
+        prev.src = b64;
+        prev.classList.remove('hidden');
+    }
+});
+
+async function simpanPromoPopup() {
+    const data = {
+        enabled: document.getElementById('popup-enabled').checked,
+        title: document.getElementById('popup-title').value.trim() || 'Promo Spesial',
+        desc: document.getElementById('popup-desc').value.trim(),
+        img: document.getElementById('popup-img-data').value,
+        btn1Label: document.getElementById('popup-btn1-label').value.trim(),
+        btn1Link: document.getElementById('popup-btn1-link').value.trim(),
+        btn2Label: document.getElementById('popup-btn2-label').value.trim(),
+        btn2Link: document.getElementById('popup-btn2-link').value.trim()
+    };
+    localStorage.setItem(dbPopupKey, JSON.stringify(data));
+    // Reset "jangan tampilkan lagi" agar popup bisa muncul lagi setelah admin update
+    localStorage.removeItem(dbPopupHideKey);
+    showSuccessModal('Popup Disimpan!', 'Popup promo akan muncul ke semua pengunjung saat membuka website.');
+    closeModal('adminPopupModal');
+}
+
+function showPromoPopupIfNeeded() {
+    const data = JSON.parse(localStorage.getItem(dbPopupKey));
+    if (!data || !data.enabled || !data.img) return;
+    if (localStorage.getItem(dbPopupHideKey) === '1') return;
+
+    document.getElementById('promo-popup-img').src = data.img;
+    document.getElementById('promo-popup-title').textContent = data.title || 'Promo Spesial';
+    document.getElementById('promo-popup-desc').textContent = data.desc || '';
+
+    const contacts = document.getElementById('promo-popup-contacts');
+    contacts.innerHTML = '';
+    if (data.btn1Label && data.btn1Link) {
+        contacts.innerHTML += `<a href="${data.btn1Link}" target="_blank" class="block w-full bg-emerald-500/15 border border-emerald-500/40 text-emerald-500 font-bold py-2.5 rounded-xl text-xs"><i class="fab fa-whatsapp"></i> ${data.btn1Label}</a>`;
+    }
+    if (data.btn2Label && data.btn2Link) {
+        contacts.innerHTML += `<a href="${data.btn2Link}" target="_blank" class="block w-full bg-sky-500/15 border border-sky-500/40 text-sky-500 font-bold py-2.5 rounded-xl text-xs"><i class="fab fa-whatsapp"></i> ${data.btn2Label}</a>`;
+    }
+
+    document.getElementById('promo-dont-show').checked = false;
+    openModal('promoPopupModal');
+}
+
+function closePromoPopup(fromBtn) {
+    if (document.getElementById('promo-dont-show').checked) {
+        localStorage.setItem(dbPopupHideKey, '1');
+    }
+    closeModal('promoPopupModal');
+}
+
+// Patch openModal for popup admin
+const _origOpenModal = openModal;
+openModal = function(id) {
+    _origOpenModal(id);
+    if (id === 'adminPopupModal') loadPromoPopupAdmin();
+};
+
+/* ===================== INIT ===================== */
+document.addEventListener('DOMContentLoaded', () => {
+    renderAllData();
+    const session = JSON.parse(localStorage.getItem(dbCurrentSessionKey));
+    if (session) {
+        const nameEl = document.getElementById('input-edit-name');
+        const avEl = document.getElementById('preview-edit-avatar');
+        if (nameEl) nameEl.value = session.username;
+        if (avEl) avEl.src = session.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(session.username)}&background=random`;
+    }
+    // Tampilkan popup promo setelah sedikit delay
+    setTimeout(showPromoPopupIfNeeded, 600);
+});
+</script>
+</body>
+</html>
+body>
+</html>
 
